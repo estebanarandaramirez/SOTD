@@ -42,7 +42,7 @@ export default async function ArtistPage({ params }: { params: { artistName: str
       .select("post_id")
       .eq("user_id", user.id)
       .in("post_id", rawPosts.map((p) => p.id));
-    likedPostIds = new Set((myLikes ?? []).map((l) => l.post_id));
+    likedPostIds = new Set((myLikes ?? []).map((l) => (l as { post_id: string }).post_id));
   }
 
   const coverImage = spotifyArtist?.images?.[0]?.url;
