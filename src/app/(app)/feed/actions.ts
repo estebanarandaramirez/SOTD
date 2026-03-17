@@ -11,7 +11,8 @@ export async function loadFeedPosts(
   offset: number
 ): Promise<FeedPost[]> {
   const supabase = createClient();
-  const { data } = await supabase.rpc("get_feed", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.rpc as any)("get_feed", {
     requesting_user_id: userId,
     since_date: sinceDate,
     page_size: PAGE_SIZE,

@@ -11,7 +11,8 @@ export async function loadDiscoverPosts(
   offset: number
 ): Promise<FeedPost[]> {
   const supabase = createClient();
-  const { data } = await supabase.rpc("get_discover", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.rpc as any)("get_discover", {
     requesting_user_id: userId,
     page_size: PAGE_SIZE,
     page_offset: offset,

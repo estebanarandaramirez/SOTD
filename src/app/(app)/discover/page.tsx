@@ -19,7 +19,8 @@ const GENRES = [
 
 async function DiscoverPosts({ userId, genre, view }: { userId: string; genre?: string; view: "compact" | "banner" }) {
   const supabase = createClient();
-  const { data: posts } = await supabase.rpc("get_discover", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: posts } = await (supabase.rpc as any)("get_discover", {
     requesting_user_id: userId,
     page_size: 10,
     page_offset: 0,
@@ -51,7 +52,8 @@ async function DiscoverPosts({ userId, genre, view }: { userId: string; genre?: 
 
 async function SimilarTaste({ userId }: { userId: string }) {
   const supabase = createClient();
-  const { data: users } = await supabase.rpc("get_similar_taste", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: users } = await (supabase.rpc as any)("get_similar_taste", {
     requesting_user_id: userId,
     result_limit: 8,
   });

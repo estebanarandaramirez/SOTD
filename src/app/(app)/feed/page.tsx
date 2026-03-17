@@ -45,7 +45,8 @@ async function FeedPosts({
   view: "compact" | "banner";
 }) {
   const supabase = createClient();
-  const { data: posts } = await supabase.rpc("get_feed", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: posts } = await (supabase.rpc as any)("get_feed", {
     requesting_user_id: userId,
     since_date: sinceDate,
     page_size: 10,
