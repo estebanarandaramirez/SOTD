@@ -103,6 +103,29 @@ export interface Database {
         };
         Update: never;
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          actor_id: string;
+          type: string;
+          post_id: string | null;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          actor_id: string;
+          type: string;
+          post_id?: string | null;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          read?: boolean;
+        };
+      };
     };
     Functions: {
       get_feed: {
