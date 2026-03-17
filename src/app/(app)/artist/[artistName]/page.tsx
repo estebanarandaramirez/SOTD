@@ -104,7 +104,7 @@ export default async function ArtistPage({ params }: { params: { artistName: str
         <div className={view === "banner" ? "space-y-4" : "space-y-2"}>
           {rawPosts.map((post) => {
             const profile = post.profiles as { username: string; avatar_url: string | null } | null;
-            const feedPost: FeedPost = {
+            const feedPost = {
               ...post,
               username: profile?.username ?? "unknown",
               avatar_url: profile?.avatar_url ?? null,
@@ -112,7 +112,7 @@ export default async function ArtistPage({ params }: { params: { artistName: str
               comment_count: post.comments?.[0]?.count ?? 0,
               liked_by_me: likedPostIds.has(post.id),
               genre: post.genre ?? null,
-            };
+            } as FeedPost;
             return <PostCard key={post.id} post={feedPost} currentUserId={user?.id} variant={view} />;
           })}
         </div>
