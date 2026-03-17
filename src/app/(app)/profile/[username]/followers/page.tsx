@@ -22,7 +22,7 @@ export default async function FollowersPage({ params }: { params: { username: st
     .select("profiles!follower_id(id, username, avatar_url, bio)")
     .eq("following_id", profile.id);
 
-  const followers = (follows ?? []).map((f) => f.profiles as { id: string; username: string; avatar_url: string | null; bio: string | null });
+  const followers = (follows ?? []).map((f) => f.profiles as unknown as { id: string; username: string; avatar_url: string | null; bio: string | null });
 
   // Check which ones the current user already follows
   let followingSet = new Set<string>();
