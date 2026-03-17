@@ -15,7 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("posted_date", today),
   ]);
 
-  const username = profile?.username ?? "me";
+  const username = (profile as { username: string } | null)?.username ?? "me";
   const hasPostedToday = (count ?? 0) > 0;
 
   return (
