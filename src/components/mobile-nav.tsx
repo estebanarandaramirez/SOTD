@@ -72,7 +72,7 @@ export function MobileNav({ username, hasPostedToday }: MobileNavProps) {
         href={`/profile/${username}`}
         className={cn(
           "flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors",
-          pathname.startsWith("/profile") ? "text-primary" : "text-muted-foreground"
+          pathname === `/profile/${username}` ? "text-primary" : "text-muted-foreground"
         )}
       >
         <User className="w-5 h-5" />

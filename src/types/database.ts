@@ -101,7 +101,9 @@ export interface Database {
           body: string;
           created_at?: string;
         };
-        Update: never;
+        Update: {
+          body?: string;
+        };
       };
       notifications: {
         Row: {
@@ -144,6 +146,14 @@ export interface Database {
       get_similar_taste: {
         Args: { requesting_user_id: string; result_limit?: number };
         Returns: SimilarUser[];
+      };
+      get_for_you: {
+        Args: { requesting_user_id: string; page_size?: number; page_offset?: number };
+        Returns: FeedPost[];
+      };
+      get_explore: {
+        Args: { requesting_user_id: string; page_size?: number; page_offset?: number };
+        Returns: FeedPost[];
       };
     };
   };

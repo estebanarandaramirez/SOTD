@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { loadFeedPosts } from "./actions";
 import type { FeedPost } from "@/types/database";
 import { NotificationBell } from "@/components/notification-bell";
+import { PostReminderBanner } from "@/components/post-reminder-banner";
 
 const FILTERS = [
   { label: "Today",      value: "today" },
@@ -35,12 +36,10 @@ function getSinceDate(filter: Filter): string {
 
 async function FeedPosts({
   userId,
-  hasPostedToday,
   sinceDate,
   view,
 }: {
   userId: string;
-  hasPostedToday: boolean;
   sinceDate: string;
   view: "compact" | "banner";
 }) {
@@ -55,34 +54,18 @@ async function FeedPosts({
 
   if (!posts || posts.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="text-center py-16 space-y-4">
-          <Users className="w-12 h-12 text-muted-foreground mx-auto" />
-          <div>
-            <p className="font-semibold">No songs yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Follow some people or check{" "}
-              <Link href="/discover" className="text-primary hover:underline">
-                Discover
-              </Link>{" "}
-              to find new listeners.
-            </p>
-          </div>
+      <div className="text-center py-16 space-y-4">
+        <Users className="w-12 h-12 text-muted-foreground mx-auto" />
+        <div>
+          <p className="font-semibold">No songs yet</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Follow some people or check{" "}
+            <Link href="/discover" className="text-primary hover:underline">
+              Discover
+            </Link>{" "}
+            to find new listeners.
+          </p>
         </div>
-        {!hasPostedToday && (
-          <div className="rounded-2xl border border-border bg-card p-6 text-center space-y-3">
-            <div>
-              <p className="font-semibold">You haven&apos;t posted yet today</p>
-              <p className="text-sm text-muted-foreground mt-1">What&apos;s the song on your mind right now?</p>
-            </div>
-            <Link
-              href="/post"
-              className="inline-block px-6 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              Share a song
-            </Link>
-          </div>
-        )}
       </div>
     );
   }
@@ -90,28 +73,12 @@ async function FeedPosts({
   const loadMore = loadFeedPosts.bind(null, userId, sinceDate);
 
   return (
-    <div className="space-y-4">
-      <PostList
-        initialPosts={posts as FeedPost[]}
-        currentUserId={userId}
-        variant={view}
-        loadMore={loadMore}
-      />
-      {!hasPostedToday && (
-        <div className="rounded-2xl border border-border bg-card p-6 text-center space-y-3">
-          <div>
-            <p className="font-semibold">You haven&apos;t posted yet today</p>
-            <p className="text-sm text-muted-foreground mt-1">What&apos;s the song on your mind right now?</p>
-          </div>
-          <Link
-            href="/post"
-            className="inline-block px-6 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            Share a song
-          </Link>
-        </div>
-      )}
-    </div>
+    <PostList
+      initialPosts={posts as FeedPost[]}
+      currentUserId={userId}
+      variant={view}
+      loadMore={loadMore}
+    />
   );
 }
 
@@ -184,6 +151,8 @@ export default async function FeedPage({
         <ViewToggle current={view} />
       </div>
 
+      {!hasPostedToday && <PostReminderBanner />}
+
       <Suspense
         key={activeFilter}
         fallback={
@@ -192,7 +161,7 @@ export default async function FeedPage({
           </div>
         }
       >
-        <FeedPosts userId={user.id} hasPostedToday={hasPostedToday} sinceDate={sinceDate} view={view} />
+        <FeedPosts userId={user.id} sinceDate={sinceDate} view={view} />
       </Suspense>
     </div>
   );

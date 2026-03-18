@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Camera } from "lucide-react";
+import { Camera, LogOut } from "lucide-react";
 import { containsProfanity } from "@/lib/moderation";
 
 interface SettingsFormProps {
@@ -168,13 +168,28 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
         <p className="text-sm text-primary bg-primary/10 px-3 py-2 rounded-lg">{message}</p>
       )}
 
-      <button
-        type="submit"
-        disabled={saving || uploading}
-        className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save changes"}
-      </button>
+      <div className="flex items-center justify-between pt-2">
+        <button
+          type="submit"
+          disabled={saving || uploading}
+          className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save changes"}
+        </button>
+
+        <button
+          type="button"
+          onClick={async () => {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            router.push("/login");
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Log out
+        </button>
+      </div>
     </form>
   );
 }

@@ -45,7 +45,7 @@ export function NavSidebar({ username, hasPostedToday }: NavSidebarProps) {
         {navItems.map(({ href, icon: Icon, label }) => {
           const isActive =
             href === "/profile"
-              ? pathname.startsWith("/profile")
+              ? pathname === `/profile/${username}`
               : pathname === href;
           const resolvedHref = href === "/profile" ? `/profile/${username}` : href;
 

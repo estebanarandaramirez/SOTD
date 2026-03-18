@@ -10,7 +10,7 @@ export interface SpotifyArtist {
 export interface SpotifyTrack {
   id: string;
   name: string;
-  artists: { name: string }[];
+  artists: { id: string; name: string }[];
   album: {
     name: string;
     images: { url: string; width: number; height: number }[];
@@ -69,6 +69,16 @@ export async function searchTracks(query: string): Promise<SpotifyTrack[]> {
 
   const data = await res.json();
   return data.tracks.items as SpotifyTrack[];
+}
+
+export async function getArtistById(artistId: string): Promise<SpotifyArtist | null> {
+  const token = await getSpotifyToken();
+  const res = await fetch(`https://api.spotify.com/v1/artists/${encodeURIComponent(artistId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export async function getArtistByName(name: string): Promise<SpotifyArtist | null> {

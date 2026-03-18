@@ -20,3 +20,25 @@ export async function loadDiscoverPosts(
   });
   return (data as FeedPost[]) ?? [];
 }
+
+export async function loadForYouPosts(userId: string, offset: number): Promise<FeedPost[]> {
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.rpc as any)("get_for_you", {
+    requesting_user_id: userId,
+    page_size: PAGE_SIZE,
+    page_offset: offset,
+  });
+  return (data as FeedPost[]) ?? [];
+}
+
+export async function loadExplorePosts(userId: string, offset: number): Promise<FeedPost[]> {
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.rpc as any)("get_explore", {
+    requesting_user_id: userId,
+    page_size: PAGE_SIZE,
+    page_offset: offset,
+  });
+  return (data as FeedPost[]) ?? [];
+}

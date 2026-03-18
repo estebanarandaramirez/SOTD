@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PostForm } from "./post-form";
 import { PostCard } from "@/components/post-card";
+import { BackButton } from "@/components/back-button";
 import type { FeedPost } from "@/types/database";
 
 export default async function PostPage() {
@@ -31,9 +32,12 @@ export default async function PostPage() {
 
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold">Today&apos;s song</h1>
-          <p className="text-sm text-muted-foreground mt-1">You&apos;ve already posted today. See you tomorrow!</p>
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <div>
+            <h1 className="text-xl font-bold">Today&apos;s song</h1>
+            <p className="text-sm text-muted-foreground mt-1">You&apos;ve already posted today. See you tomorrow!</p>
+          </div>
         </div>
         <PostCard post={feedPost} currentUserId={user.id} />
       </div>
@@ -42,9 +46,12 @@ export default async function PostPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">Post today&apos;s song</h1>
-        <p className="text-sm text-muted-foreground mt-1">What are you listening to?</p>
+      <div className="flex items-center gap-3">
+        <BackButton />
+        <div>
+          <h1 className="text-xl font-bold">Post today&apos;s song</h1>
+          <p className="text-sm text-muted-foreground mt-1">What are you listening to?</p>
+        </div>
       </div>
       <PostForm userId={user.id} />
     </div>

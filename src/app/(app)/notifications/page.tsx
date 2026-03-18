@@ -14,6 +14,7 @@ function notificationText(n: RawNotification): { action: string; detail?: string
     case "like":    return { action: "liked your post", detail: track };
     case "comment": return { action: "commented on your post", detail: track };
     case "follow":  return { action: "started following you" };
+    case "mention": return { action: "mentioned you in a comment", detail: track };
     default:        return { action: "" };
   }
 }

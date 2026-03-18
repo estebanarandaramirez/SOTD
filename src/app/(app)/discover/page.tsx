@@ -2,22 +2,21 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PostCardSkeleton } from "@/components/post-card-skeleton";
 import { PostList } from "@/components/post-list";
-import { FollowButton } from "@/components/follow-button";
 import { ViewToggle } from "@/components/view-toggle";
+import { GenreSearch } from "@/components/genre-search";
+import { GENRES } from "@/lib/genres";
 import { Suspense } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { cookies } from "next/headers";
-import type { FeedPost, SimilarUser } from "@/types/database";
-import { loadDiscoverPosts } from "./actions";
+import Link from "next/link";
+import type { FeedPost } from "@/types/database";
+import { loadDiscoverPosts, loadForYouPosts, loadExplorePosts } from "./actions";
 import { NotificationBell } from "@/components/notification-bell";
 
-const GENRES = [
-  "Pop", "Rock", "Hip-Hop", "R&B", "Electronic",
-  "Jazz", "Indie", "Classical", "Country", "Metal", "Folk", "Latin",
-];
+const TABS = ["all", "foryou", "explore"] as const;
+type Tab = (typeof TABS)[number];
 
-async function DiscoverPosts({ userId, genre, view }: { userId: string; genre?: string; view: "compact" | "banner" }) {
+async function AllPosts({ userId, genre, view }: { userId: string; genre?: string; view: "compact" | "banner" }) {
   const supabase = createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: posts } = await (supabase.rpc as any)("get_discover", {
@@ -27,7 +26,7 @@ async function DiscoverPosts({ userId, genre, view }: { userId: string; genre?: 
     genre_filter: genre ?? null,
   });
 
-  if (!posts || posts.length === 0) {
+  if (!posts?.length) {
     return (
       <div className="text-center py-16">
         <p className="font-semibold">No posts yet</p>
@@ -38,72 +37,73 @@ async function DiscoverPosts({ userId, genre, view }: { userId: string; genre?: 
     );
   }
 
-  const loadMore = loadDiscoverPosts.bind(null, userId, genre);
-
   return (
     <PostList
       initialPosts={posts as FeedPost[]}
       currentUserId={userId}
       variant={view}
-      loadMore={loadMore}
+      loadMore={loadDiscoverPosts.bind(null, userId, genre)}
     />
   );
 }
 
-async function SimilarTaste({ userId }: { userId: string }) {
+async function ForYouPosts({ userId, view }: { userId: string; view: "compact" | "banner" }) {
   const supabase = createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: users } = await (supabase.rpc as any)("get_similar_taste", {
+  const { data: posts } = await (supabase.rpc as any)("get_for_you", {
     requesting_user_id: userId,
-    result_limit: 8,
+    page_size: 10,
+    page_offset: 0,
   });
 
-  if (!users || users.length === 0) {
+  if (!posts?.length) {
     return (
       <div className="text-center py-16">
-        <p className="font-semibold">No matches yet</p>
+        <p className="font-semibold">Nothing here yet</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Post more songs to find people who share your taste.
+          Post more songs so we can find music that matches your taste.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {(users as SimilarUser[]).map((u) => (
-        <div key={u.user_id} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card">
-          <Link
-            href={`/profile/${u.username}`}
-            className="w-10 h-10 rounded-full bg-primary flex items-center justify-center overflow-hidden flex-shrink-0"
-          >
-            {u.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={u.avatar_url} alt={u.username} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-sm font-bold text-primary-foreground">
-                {u.username[0].toUpperCase()}
-              </span>
-            )}
-          </Link>
-          <div className="flex-1 min-w-0">
-            <Link href={`/profile/${u.username}`} className="font-semibold text-sm hover:underline">
-              {u.username}
-            </Link>
-            {u.latest_track && (
-              <p className="text-xs text-muted-foreground truncate">
-                {u.latest_track} · {u.latest_artist}
-              </p>
-            )}
-            <p className="text-xs text-primary mt-0.5 truncate">
-              Shared: {u.shared_artists.slice(0, 3).join(", ")}
-              {u.shared_artists.length > 3 ? ` +${u.shared_artists.length - 3} more` : ""}
-            </p>
-          </div>
-          <FollowButton currentUserId={userId} targetUserId={u.user_id} initialFollowing={u.is_following} />
-        </div>
-      ))}
-    </div>
+    <PostList
+      initialPosts={posts as FeedPost[]}
+      currentUserId={userId}
+      variant={view}
+      loadMore={loadForYouPosts.bind(null, userId)}
+    />
+  );
+}
+
+async function ExplorePosts({ userId, view }: { userId: string; view: "compact" | "banner" }) {
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: posts } = await (supabase.rpc as any)("get_explore", {
+    requesting_user_id: userId,
+    page_size: 10,
+    page_offset: 0,
+  });
+
+  if (!posts?.length) {
+    return (
+      <div className="text-center py-16">
+        <p className="font-semibold">Nothing new to explore</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          You&apos;ve covered a lot of ground. Keep posting to unlock more.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <PostList
+      initialPosts={posts as FeedPost[]}
+      currentUserId={userId}
+      variant={view}
+      loadMore={loadExplorePosts.bind(null, userId)}
+    />
   );
 }
 
@@ -116,9 +116,12 @@ export default async function DiscoverPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const tab = searchParams.tab === "similar" ? "similar" : "explore";
+  const rawTab = searchParams.tab ?? "all";
+  const tab: Tab = (TABS as readonly string[]).includes(rawTab) ? rawTab as Tab : "all";
   const genre = GENRES.includes(searchParams.genre ?? "") ? searchParams.genre : undefined;
   const view: "compact" | "banner" = cookies().get("view")?.value === "compact" ? "compact" : "banner";
+
+  const tabLabels: Record<Tab, string> = { all: "All", foryou: "For You", explore: "Explore" };
 
   return (
     <div className="space-y-5">
@@ -131,74 +134,43 @@ export default async function DiscoverPage({
         <NotificationBell variant="icon" />
       </div>
 
-      {/* Filter chips + toggle */}
-      <div className="flex items-start gap-2">
-        <div className="flex flex-wrap items-center gap-2 flex-1">
-        <Link
-          href="/discover"
-          className={cn(
-            "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-            tab === "explore" && !genre
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-foreground hover:bg-secondary/80"
-          )}
-        >
-          All
-        </Link>
-        <Link
-          href="/discover?tab=similar"
-          className={cn(
-            "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-            tab === "similar"
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-foreground hover:bg-secondary/80"
-          )}
-        >
-          For You
-        </Link>
-        {GENRES.map((g) => (
-          <Link
-            key={g}
-            href={`/discover?tab=explore&genre=${encodeURIComponent(g)}`}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-              genre === g
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-foreground hover:bg-secondary/80"
-            )}
-          >
-            {g}
-          </Link>
-        ))}
+      {/* Tabs + ViewToggle */}
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1 flex-1">
+          {TABS.map((t) => (
+            <Link
+              key={t}
+              href={`/discover?tab=${t}`}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
+                tab === t
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-foreground hover:bg-secondary/80"
+              )}
+            >
+              {tabLabels[t]}
+            </Link>
+          ))}
         </div>
         <ViewToggle current={view} />
       </div>
 
+      {/* Genre search — only on All tab */}
+      {tab === "all" && <GenreSearch activeGenre={genre} activeTab={tab} />}
+
       {/* Content */}
-      {tab === "similar" ? (
-        <Suspense
-          fallback={
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
-              ))}
-            </div>
-          }
-        >
-          <SimilarTaste userId={user.id} />
-        </Suspense>
-      ) : (
-        <Suspense
-          key={genre}
-          fallback={
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => <PostCardSkeleton key={i} />)}
-            </div>
-          }
-        >
-          <DiscoverPosts userId={user.id} genre={genre} view={view} />
-        </Suspense>
-      )}
+      <Suspense
+        key={`${tab}-${genre ?? ""}`}
+        fallback={
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => <PostCardSkeleton key={i} />)}
+          </div>
+        }
+      >
+        {tab === "all"    && <AllPosts    userId={user.id} genre={genre} view={view} />}
+        {tab === "foryou" && <ForYouPosts userId={user.id} view={view} />}
+        {tab === "explore"&& <ExplorePosts userId={user.id} view={view} />}
+      </Suspense>
     </div>
   );
 }

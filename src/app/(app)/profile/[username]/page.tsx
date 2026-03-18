@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import type { FeedPost } from "@/types/database";
 import { loadProfilePosts } from "../actions";
 import { NotificationBell } from "@/components/notification-bell";
+import { BackButton } from "@/components/back-button";
 
 interface ProfilePageProps {
   params: { username: string };
@@ -20,19 +21,28 @@ function calcStreak(posts: { posted_date: string }[]): number {
   if (!posts.length) return 0;
   const sorted = [...posts].sort((a, b) => b.posted_date.localeCompare(a.posted_date));
   const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  const mostRecent = sorted[0].posted_date;
+  // Streak is dead only if the last post was before yesterday (a full day passed)
+  if (mostRecent < yesterdayStr) return 0;
+
   let streak = 0;
-  let expected = today;
+  let expected = mostRecent;
   for (const p of sorted) {
     if (p.posted_date === expected) {
       streak++;
-      const d = new Date(expected);
+      const d = new Date(expected + "T12:00:00");
       d.setDate(d.getDate() - 1);
       expected = d.toISOString().split("T")[0];
     } else {
       break;
     }
   }
-  return streak;
+  // If most recent post is today, show streak; if yesterday, add 1 to account for today not yet posted
+  return mostRecent === today ? streak : streak;
 }
 
 function formatPostedDate(dateStr: string): string {
@@ -113,6 +123,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <div className="space-y-6">
+      <BackButton />
+
       {/* Profile header */}
       <div className="flex items-start gap-4">
         <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -166,11 +178,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border p-4 text-center">
           <p className="text-2xl font-bold">{totalPostCount ?? 0}</p>
-          <p className="text-xs text-muted-foreground mt-1">Days posted</p>
+          <p className="text-xs text-muted-foreground mt-1">{(totalPostCount ?? 0) === 1 ? "Day posted" : "Days posted"}</p>
         </div>
         <div className="rounded-xl border border-border p-4 text-center">
           <p className="text-2xl font-bold">{likesReceived}</p>
-          <p className="text-xs text-muted-foreground mt-1">Likes received</p>
+          <p className="text-xs text-muted-foreground mt-1">{likesReceived === 1 ? "Like received" : "Likes received"}</p>
         </div>
         <div className="rounded-xl border border-border p-4 text-center">
           <p className="text-2xl font-bold text-primary">{streak}</p>

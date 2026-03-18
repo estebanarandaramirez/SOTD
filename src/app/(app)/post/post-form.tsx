@@ -1,26 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Music, X } from "lucide-react";
 import { SpotifySearch } from "@/components/spotify-search";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 import type { SpotifyTrack } from "@/lib/spotify";
 
-const GENRES = [
-  "Pop", "Rock", "Hip-Hop", "R&B", "Electronic",
-  "Jazz", "Indie", "Classical", "Country", "Metal", "Folk", "Latin",
-];
+const GENRE_MAP: Record<string, string[]> = {
+  "Pop": ["pop", "electropop", "dance pop", "synth-pop", "synth pop"],
+  "Rock": ["rock", "alternative rock", "indie rock", "hard rock", "punk", "grunge"],
+  "Hip-Hop": ["hip hop", "hip-hop", "rap", "trap", "drill", "grime"],
+  "R&B": ["r&b", "soul", "neo soul", "contemporary r&b", "rnb"],
+  "Electronic": ["electronic", "edm", "house", "techno", "dubstep", "ambient", "drum and bass"],
+  "Jazz": ["jazz", "jazz fusion", "smooth jazz", "bebop"],
+  "Indie": ["indie", "indie pop", "indie folk", "bedroom pop", "lo-fi", "lo fi"],
+  "Classical": ["classical", "orchestral", "opera", "baroque", "chamber"],
+  "Country": ["country", "country pop", "bluegrass", "americana"],
+  "Metal": ["metal", "heavy metal", "death metal", "black metal", "metalcore"],
+  "Folk": ["folk", "folk rock", "traditional folk", "singer-songwriter"],
+  "Latin": ["latin", "reggaeton", "salsa", "bachata", "latin pop", "cumbia"],
+};
+
+function mapSpotifyGenre(genres: string[]): string | null {
+  for (const genre of genres) {
+    const lower = genre.toLowerCase();
+    for (const [mapped, keywords] of Object.entries(GENRE_MAP)) {
+      if (keywords.some((k) => lower.includes(k))) return mapped;
+    }
+  }
+  return null;
+}
 
 export function PostForm({ userId }: { userId: string }) {
   const router = useRouter();
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null);
   const [note, setNote] = useState("");
   const [genre, setGenre] = useState<string | null>(null);
+  const [genreLoading, setGenreLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!selectedTrack) { setGenre(null); return; }
+    const artistId = selectedTrack.artists[0]?.id;
+    if (!artistId) return;
+    setGenreLoading(true);
+    fetch(`/api/spotify/artist?id=${artistId}`)
+      .then((r) => r.json())
+      .then(({ genres }) => { setGenre(mapSpotifyGenre(genres ?? [])); })
+      .finally(() => setGenreLoading(false));
+  }, [selectedTrack]);
 
   async function handlePost() {
     if (!selectedTrack) return;
@@ -29,6 +60,8 @@ export function PostForm({ userId }: { userId: string }) {
 
     const supabase = createClient();
     const albumArt = selectedTrack.album.images[0]?.url ?? null;
+    // Use local date so the post is attributed to the user's current day
+    const posted_date = new Date().toLocaleDateString("en-CA");
 
     const { error } = await supabase.from("posts").insert({
       user_id: userId,
@@ -40,6 +73,7 @@ export function PostForm({ userId }: { userId: string }) {
       preview_url: selectedTrack.preview_url,
       note: note.trim() || null,
       genre: genre,
+      posted_date,
     });
 
     if (error) {
@@ -108,28 +142,16 @@ export function PostForm({ userId }: { userId: string }) {
             />
           )}
 
-          {/* Genre */}
-          <div>
-            <label className="text-sm font-medium block mb-2">
-              Genre <span className="text-muted-foreground font-normal">(optional)</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {GENRES.map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setGenre(genre === g ? null : g)}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-                    genre === g
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  )}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
+          {/* Genre — auto-detected from Spotify */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium">Genre</span>
+            {genreLoading && <span className="text-muted-foreground text-xs">Detecting…</span>}
+            {!genreLoading && genre && (
+              <span className="px-2.5 py-0.5 rounded-full bg-secondary text-xs font-medium">{genre}</span>
+            )}
+            {!genreLoading && !genre && (
+              <span className="text-muted-foreground text-xs">Not detected</span>
+            )}
           </div>
 
           {/* Note */}
@@ -145,7 +167,7 @@ export function PostForm({ userId }: { userId: string }) {
               placeholder="Why this song today?"
               className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
-            <p className={`text-xs text-right mt-1 ${note.length >= 280 ? "text-destructive" : "text-muted-foreground"}`}>{note.length}/300</p>
+            <p className="text-xs text-right mt-1 text-muted-foreground">{note.length}/300</p>
           </div>
 
           {error && (

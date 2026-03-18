@@ -17,3 +17,15 @@ export function formatDate(date: string | Date) {
     year: "numeric",
   });
 }
+
+export function parseMentions(text: string): string[] {
+  return (text.match(/@(\w+)/g) ?? []).map((m) => m.slice(1));
+}
+
+// Returns an array of strings/ReactElements for rendering @mentions as links.
+// Import createElement and a Link component at call site.
+export function splitMentions(text: string): { type: "text" | "mention"; value: string }[] {
+  const parts = text.split(/(@\w+)/g);
+  return parts.map((part) => (/^@\w+$/.test(part) ? { type: "mention", value: part.slice(1) } : { type: "text", value: part }));
+}
+
