@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getArtistById } from "@/lib/spotify";
+import { CORS_HEADERS } from "@/lib/cors";
 
 /** Decode a Supabase Bearer JWT without a network call.
  *  Validates: 3-part structure, not expired, issuer matches our project. */
@@ -42,14 +43,18 @@ async function getUser(request: NextRequest) {
   return null;
 }
 
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function GET(request: NextRequest) {
   const user = await getUser(request);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: CORS_HEADERS });
 
   const { searchParams } = new URL(request.url);
   const artistId = searchParams.get("id");
-  if (!artistId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  if (!artistId) return NextResponse.json({ error: "Missing id" }, { status: 400, headers: CORS_HEADERS });
 
   const artist = await getArtistById(artistId);
-  return NextResponse.json({ genres: artist?.genres ?? [] });
+  return NextResponse.json({ genres: artist?.genres ?? [] }, { headers: CORS_HEADERS });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchTracks } from "@/lib/spotify";
 import { createClient } from "@/lib/supabase/server";
+import { CORS_HEADERS } from "@/lib/cors";
 
 /** Decode a Supabase Bearer JWT without a network call.
  *  Validates: 3-part structure, not expired, issuer matches our project. */
@@ -42,22 +43,26 @@ async function getUser(request: NextRequest) {
   return null;
 }
 
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function GET(request: NextRequest) {
   const user = await getUser(request);
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: CORS_HEADERS });
   }
 
   const q = request.nextUrl.searchParams.get("q");
   if (!q || q.trim().length < 2) {
-    return NextResponse.json({ tracks: [] });
+    return NextResponse.json({ tracks: [] }, { headers: CORS_HEADERS });
   }
 
   try {
     const tracks = await searchTracks(q.trim());
-    return NextResponse.json({ tracks });
+    return NextResponse.json({ tracks }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error("Spotify search error:", err);
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+    return NextResponse.json({ error: "Search failed" }, { status: 500, headers: CORS_HEADERS });
   }
 }
