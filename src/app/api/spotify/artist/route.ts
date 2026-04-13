@@ -55,6 +55,14 @@ export async function GET(request: NextRequest) {
   const artistId = searchParams.get("id");
   const artistName = searchParams.get("name");
 
+  // ?track= — look up artist via track ID (most reliable for existing posts)
+  const trackId = searchParams.get("track");
+  if (trackId) {
+    const { getArtistByTrackId } = await import("@/lib/spotify");
+    const artist = await getArtistByTrackId(trackId);
+    return NextResponse.json(artist ?? null, { headers: CORS_HEADERS });
+  }
+
   // ?name= — look up by name (fallback, less reliable)
   if (artistName) {
     const { getArtistByName } = await import("@/lib/spotify");

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getArtistByName, getArtistById } from "@/lib/spotify";
+import { getArtistByName, getArtistById, getArtistByTrackId } from "@/lib/spotify";
 import { PostCard } from "@/components/post-card";
 import { BackButton } from "@/components/back-button";
 import { cookies } from "next/headers";
@@ -23,17 +23,20 @@ export default async function ArtistPage({ params }: { params: { artistName: str
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // First grab any post to extract the artist_id
+  // Grab any post to get artist_id or track_id for reliable Spotify lookup
   const { data: samplePost } = await supabase
     .from("posts")
-    .select("artist_id")
+    .select("artist_id, spotify_track_id")
     .ilike("artist_name", artistName)
-    .not("artist_id", "is", null)
     .limit(1)
     .maybeSingle()
 
   const [rawSpotifyArtist, { data: posts }] = await Promise.all([
-    samplePost?.artist_id ? getArtistById(samplePost.artist_id) : getArtistByName(artistName),
+    samplePost?.artist_id
+      ? getArtistById(samplePost.artist_id)
+      : samplePost?.spotify_track_id
+      ? getArtistByTrackId(samplePost.spotify_track_id)
+      : getArtistByName(artistName),
     supabase
       .from("posts")
       .select("*, likes(count), comments(count), profiles!user_id(username, avatar_url)")
@@ -41,10 +44,11 @@ export default async function ArtistPage({ params }: { params: { artistName: str
       .order("posted_date", { ascending: false }),
   ]);
 
-  // If we used name lookup (no artist_id), validate match to prevent e.g. "ear" → "Earl Sweatshirt"
-  const spotifyArtist = samplePost?.artist_id
-    ? rawSpotifyArtist
-    : (rawSpotifyArtist?.name.toLowerCase() === artistName.toLowerCase() ? rawSpotifyArtist : null)
+  // Only apply name validation when falling back to name search (no id or track available)
+  const usedNameFallback = !samplePost?.artist_id && !samplePost?.spotify_track_id
+  const spotifyArtist = usedNameFallback
+    ? (rawSpotifyArtist?.name.toLowerCase() === artistName.toLowerCase() ? rawSpotifyArtist : null)
+    : rawSpotifyArtist
 
   const rawPosts: RawPost[] = posts ?? [];
 

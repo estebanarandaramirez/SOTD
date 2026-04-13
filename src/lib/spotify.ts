@@ -81,6 +81,19 @@ export async function getArtistById(artistId: string): Promise<SpotifyArtist | n
   return res.json();
 }
 
+export async function getArtistByTrackId(trackId: string): Promise<SpotifyArtist | null> {
+  const token = await getSpotifyToken();
+  const res = await fetch(`https://api.spotify.com/v1/tracks/${encodeURIComponent(trackId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+  const track = await res.json();
+  const artistId = track.artists?.[0]?.id;
+  if (!artistId) return null;
+  return getArtistById(artistId);
+}
+
 export async function getArtistByName(name: string): Promise<SpotifyArtist | null> {
   const token = await getSpotifyToken();
 
