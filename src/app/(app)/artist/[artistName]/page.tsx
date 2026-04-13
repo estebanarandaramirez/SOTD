@@ -35,7 +35,7 @@ export default async function ArtistPage({ params }: { params: { artistName: str
   // Only use Spotify data if name matches closely — prevents e.g. "ear" → "Earl Sweatshirt"
   const a = rawSpotifyArtist?.name.toLowerCase() ?? ''
   const b = artistName.toLowerCase()
-  const spotifyArtist = rawSpotifyArtist && (a === b || a.startsWith(b) || b.startsWith(a)) ? rawSpotifyArtist : null
+  const spotifyArtist = rawSpotifyArtist && a === b ? rawSpotifyArtist : null
 
   const rawPosts: RawPost[] = posts ?? [];
 
