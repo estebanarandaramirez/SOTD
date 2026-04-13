@@ -23,7 +23,7 @@ export default async function ArtistPage({ params }: { params: { artistName: str
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [spotifyArtist, { data: posts }] = await Promise.all([
+  const [rawSpotifyArtist, { data: posts }] = await Promise.all([
     getArtistByName(artistName),
     supabase
       .from("posts")
@@ -31,6 +31,11 @@ export default async function ArtistPage({ params }: { params: { artistName: str
       .ilike("artist_name", artistName)
       .order("posted_date", { ascending: false }),
   ]);
+
+  // Only use Spotify data if name matches closely — prevents e.g. "ear" → "Earl Sweatshirt"
+  const a = rawSpotifyArtist?.name.toLowerCase() ?? ''
+  const b = artistName.toLowerCase()
+  const spotifyArtist = rawSpotifyArtist && (a === b || a.includes(b) || b.includes(a)) ? rawSpotifyArtist : null
 
   const rawPosts: RawPost[] = posts ?? [];
 
