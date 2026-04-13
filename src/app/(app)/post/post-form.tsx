@@ -68,6 +68,7 @@ export function PostForm({ userId }: { userId: string }) {
       spotify_track_id: selectedTrack.id,
       track_name: selectedTrack.name,
       artist_name: selectedTrack.artists.map((a) => a.name).join(", "),
+      artist_id: selectedTrack.artists[0]?.id ?? null,
       album_name: selectedTrack.album.name,
       album_art_url: albumArt,
       preview_url: selectedTrack.preview_url,

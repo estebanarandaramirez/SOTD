@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getArtistByName } from "@/lib/spotify";
+import { getArtistByName, getArtistById } from "@/lib/spotify";
 import { PostCard } from "@/components/post-card";
 import { BackButton } from "@/components/back-button";
 import { cookies } from "next/headers";
@@ -23,8 +23,17 @@ export default async function ArtistPage({ params }: { params: { artistName: str
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // First grab any post to extract the artist_id
+  const { data: samplePost } = await supabase
+    .from("posts")
+    .select("artist_id")
+    .ilike("artist_name", artistName)
+    .not("artist_id", "is", null)
+    .limit(1)
+    .maybeSingle()
+
   const [rawSpotifyArtist, { data: posts }] = await Promise.all([
-    getArtistByName(artistName),
+    samplePost?.artist_id ? getArtistById(samplePost.artist_id) : getArtistByName(artistName),
     supabase
       .from("posts")
       .select("*, likes(count), comments(count), profiles!user_id(username, avatar_url)")
@@ -32,10 +41,10 @@ export default async function ArtistPage({ params }: { params: { artistName: str
       .order("posted_date", { ascending: false }),
   ]);
 
-  // Only use Spotify data if name matches closely — prevents e.g. "ear" → "Earl Sweatshirt"
-  const a = rawSpotifyArtist?.name.toLowerCase() ?? ''
-  const b = artistName.toLowerCase()
-  const spotifyArtist = rawSpotifyArtist && a === b ? rawSpotifyArtist : null
+  // If we used name lookup (no artist_id), validate match to prevent e.g. "ear" → "Earl Sweatshirt"
+  const spotifyArtist = samplePost?.artist_id
+    ? rawSpotifyArtist
+    : (rawSpotifyArtist?.name.toLowerCase() === artistName.toLowerCase() ? rawSpotifyArtist : null)
 
   const rawPosts: RawPost[] = posts ?? [];
 

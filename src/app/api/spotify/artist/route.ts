@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
   const artistId = searchParams.get("id");
   const artistName = searchParams.get("name");
 
+  // ?name= — look up by name (fallback, less reliable)
   if (artistName) {
     const { getArtistByName } = await import("@/lib/spotify");
     const artist = await getArtistByName(artistName);
@@ -64,5 +65,9 @@ export async function GET(request: NextRequest) {
   if (!artistId) return NextResponse.json({ error: "Missing id or name" }, { status: 400, headers: CORS_HEADERS });
 
   const artist = await getArtistById(artistId);
+  // ?full=1 — return full artist object (for artist page hero)
+  if (searchParams.get("full") === "1") {
+    return NextResponse.json(artist ?? null, { headers: CORS_HEADERS });
+  }
   return NextResponse.json({ genres: artist?.genres ?? [] }, { headers: CORS_HEADERS });
 }
