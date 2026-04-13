@@ -53,7 +53,15 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const artistId = searchParams.get("id");
-  if (!artistId) return NextResponse.json({ error: "Missing id" }, { status: 400, headers: CORS_HEADERS });
+  const artistName = searchParams.get("name");
+
+  if (artistName) {
+    const { getArtistByName } = await import("@/lib/spotify");
+    const artist = await getArtistByName(artistName);
+    return NextResponse.json(artist ?? null, { headers: CORS_HEADERS });
+  }
+
+  if (!artistId) return NextResponse.json({ error: "Missing id or name" }, { status: 400, headers: CORS_HEADERS });
 
   const artist = await getArtistById(artistId);
   return NextResponse.json({ genres: artist?.genres ?? [] }, { headers: CORS_HEADERS });
