@@ -87,11 +87,11 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
             {/* Row 1: username + time */}
             <div className="flex items-center gap-1.5 min-w-0">
               <Link href={`/profile/${post.username}`} className="flex items-center gap-1.5 min-w-0 hover:opacity-80">
-                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                   {post.avatar_url ? (
                     <Image src={post.avatar_url} alt="" width={20} height={20} className="object-cover" />
                   ) : (
-                    <span className="text-[9px] font-bold text-primary-foreground leading-none">
+                    <span className="text-[9px] font-bold text-muted-foreground leading-none">
                       {post.username[0].toUpperCase()}
                     </span>
                   )}
@@ -254,11 +254,11 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
           {/* User info + time */}
           <div className="flex items-center gap-2">
             <Link href={`/profile/${post.username}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center overflow-hidden">
+              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                 {post.avatar_url ? (
                   <Image src={post.avatar_url} alt={post.username} width={28} height={28} className="object-cover" />
                 ) : (
-                  <span className="text-xs font-bold text-primary-foreground">
+                  <span className="text-xs font-bold text-muted-foreground">
                     {post.username[0].toUpperCase()}
                   </span>
                 )}

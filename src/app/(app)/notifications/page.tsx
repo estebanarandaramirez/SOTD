@@ -8,13 +8,12 @@ import { BackButton } from "@/components/back-button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RawNotification = Record<string, any>;
 
-function notificationText(n: RawNotification): { action: string; detail?: string } {
-  const track = n.post?.track_name;
+function notificationText(n: RawNotification): { action: string } {
   switch (n.type) {
-    case "like":    return { action: "liked your post", detail: track };
-    case "comment": return { action: "commented on your post", detail: track };
+    case "like":    return { action: "liked your post" };
+    case "comment": return { action: "commented on your post" };
     case "follow":  return { action: "started following you" };
-    case "mention": return { action: "mentioned you in a comment", detail: track };
+    case "mention": return { action: "mentioned you in a comment on" };
     default:        return { action: "" };
   }
 }
@@ -24,7 +23,6 @@ export default async function NotificationsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Fetch before marking read so we can highlight unread ones
   const { data: raw } = await supabase
     .from("notifications")
     .select("id, type, read, created_at, actor:profiles!actor_id(username, avatar_url), post:posts(id, track_name)")
@@ -32,7 +30,6 @@ export default async function NotificationsPage() {
     .order("created_at", { ascending: false })
     .limit(50);
 
-  // Mark all as read
   await supabase
     .from("notifications")
     .update({ read: true })
@@ -59,22 +56,23 @@ export default async function NotificationsPage() {
         <div className="space-y-1">
           {notifications.map((n) => {
             const actor = n.actor as { username: string; avatar_url: string | null } | null;
-            const { action, detail } = notificationText(n);
-            const href = n.type === "follow"
-              ? `/profile/${actor?.username}`
-              : `/profile/${actor?.username}`;
+            const post = n.post as { id: string; track_name: string } | null;
+            const { action } = notificationText(n);
+            const hasPost = n.type !== "follow" && post?.id;
 
             return (
-              <Link
+              <div
                 key={n.id}
-                href={href}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors hover:bg-muted/50",
+                  "flex items-center gap-3 px-4 py-3 rounded-xl",
                   !n.read && "bg-primary/5"
                 )}
               >
-                {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                {/* Avatar → actor profile */}
+                <Link
+                  href={`/profile/${actor?.username}`}
+                  className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 hover:opacity-80 transition-opacity"
+                >
                   {actor?.avatar_url ? (
                     <Image src={actor.avatar_url} alt={actor.username} width={40} height={40} className="object-cover" />
                   ) : (
@@ -82,25 +80,34 @@ export default async function NotificationsPage() {
                       {actor?.username?.[0]?.toUpperCase() ?? "?"}
                     </span>
                   )}
-                </div>
+                </Link>
 
                 {/* Text */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm leading-snug">
-                    <span className="font-semibold">{actor?.username}</span>{" "}
+                    <Link href={`/profile/${actor?.username}`} className="font-semibold hover:underline">
+                      {actor?.username}
+                    </Link>{" "}
                     <span className="text-muted-foreground">{action}</span>
-                    {detail && (
-                      <span className="text-foreground font-medium"> · {detail}</span>
+                    {hasPost && (
+                      <>
+                        {" · "}
+                        <Link
+                          href={`/post/${post!.id}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {post!.track_name}
+                        </Link>
+                      </>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
                 </div>
 
-                {/* Unread dot */}
                 {!n.read && (
                   <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                 )}
-              </Link>
+              </div>
             );
           })}
         </div>
@@ -108,4 +115,3 @@ export default async function NotificationsPage() {
     </div>
   );
 }
-

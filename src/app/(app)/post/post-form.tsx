@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Music, X } from "lucide-react";
 import { SpotifySearch } from "@/components/spotify-search";
 import { createClient } from "@/lib/supabase/client";
+import { notifyMentions } from "@/app/(app)/actions";
 import type { SpotifyTrack } from "@/lib/spotify";
 
 const GENRE_MAP: Record<string, string[]> = {
@@ -63,7 +64,7 @@ export function PostForm({ userId }: { userId: string }) {
     // Use local date so the post is attributed to the user's current day
     const posted_date = new Date().toLocaleDateString("en-CA");
 
-    const { error } = await supabase.from("posts").insert({
+    const { data: newPost, error } = await supabase.from("posts").insert({
       user_id: userId,
       spotify_track_id: selectedTrack.id,
       track_name: selectedTrack.name,
@@ -75,7 +76,7 @@ export function PostForm({ userId }: { userId: string }) {
       note: note.trim() || null,
       genre: genre,
       posted_date,
-    });
+    }).select("id").single();
 
     if (error) {
       const isDuplicate =
@@ -84,6 +85,10 @@ export function PostForm({ userId }: { userId: string }) {
       setError(isDuplicate ? "You've already shared a song today. Come back tomorrow!" : error.message);
       setSubmitting(false);
     } else {
+      // Notify anyone @mentioned in the note
+      if (newPost && note.trim()) {
+        await notifyMentions(note.trim(), newPost.id, userId);
+      }
       router.push("/feed");
       router.refresh();
     }

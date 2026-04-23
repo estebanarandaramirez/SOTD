@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { FollowButton } from "@/components/follow-button";
 import { BackButton } from "@/components/back-button";
+import { FollowTabs } from "@/components/follow-tabs";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -39,8 +40,9 @@ export default async function FollowingPage({ params }: { params: { username: st
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <BackButton />
-        <h1 className="text-xl font-bold">{profile.username}&apos;s following</h1>
+        <h1 className="text-lg font-bold">@{profile.username}</h1>
       </div>
+      <FollowTabs username={profile.username} activeTab="following" />
 
       {following.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-12">Not following anyone yet.</p>

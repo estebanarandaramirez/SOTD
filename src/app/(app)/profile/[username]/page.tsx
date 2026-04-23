@@ -192,7 +192,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </div>
         <div className="rounded-xl border border-border p-4 text-center relative">
           {isTopStreaker && (
-            <Crown className="w-4 h-4 text-primary fill-primary absolute top-2 right-2" aria-label="Top streaker on the platform" />
+            <div className="absolute top-2 right-2 group/crown">
+              <Crown className="w-4 h-4 text-primary fill-primary" />
+              <div className="pointer-events-none absolute bottom-full right-0 mb-1.5 px-2 py-1 rounded-lg bg-popover border border-border shadow-md text-xs whitespace-nowrap opacity-0 group-hover/crown:opacity-100 transition-opacity">
+                Highest streak on the platform
+              </div>
+            </div>
           )}
           <p className="text-2xl font-bold text-primary">{streak}</p>
           <p className="text-xs text-muted-foreground mt-1">Day streak</p>
