@@ -6,6 +6,7 @@ import { ViewToggle } from "@/components/view-toggle";
 import { PostingCalendar } from "@/components/posting-calendar";
 import Image from "next/image";
 import Link from "next/link";
+import { Crown } from "lucide-react";
 
 import { cookies } from "next/headers";
 import type { FeedPost } from "@/types/database";
@@ -20,10 +21,10 @@ interface ProfilePageProps {
 function calcStreak(posts: { posted_date: string }[]): number {
   if (!posts.length) return 0;
   const sorted = [...posts].sort((a, b) => b.posted_date.localeCompare(a.posted_date));
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA");
+  const _yesterday = new Date();
+  _yesterday.setDate(_yesterday.getDate() - 1);
+  const yesterdayStr = _yesterday.toLocaleDateString("en-CA");
 
   const mostRecent = sorted[0].posted_date;
   // Streak is dead only if the last post was before yesterday (a full day passed)
@@ -80,6 +81,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     { data: posts },
     { data: calendarPosts },
     { data: likeStats },
+    topStreakerResult,
   ] = await Promise.all([
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
@@ -99,6 +101,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       .eq("user_id", profile.id)
       .gte("posted_date", yearAgoStr),
     supabase.from("posts").select("likes(count)").eq("user_id", profile.id),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.rpc as any)("get_top_streaker"),
   ]);
 
   const rawPosts: RawPost[] = posts ?? [];
@@ -117,6 +121,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const likesReceived = (likeStats ?? []).reduce((sum: number, p: RawPost) => sum + (p.likes?.[0]?.count ?? 0), 0);
   const streak = calcStreak(calendarPosts ?? []);
+  const topStreakerId: string | null = (topStreakerResult?.data as { user_id: string }[] | null)?.[0]?.user_id ?? null;
+  const isTopStreaker = streak > 0 && topStreakerId === profile.id;
 
   const isOwnProfile = user?.id === profile.id;
   const isFollowing = (isFollowingCount ?? 0) > 0;
@@ -184,7 +190,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           <p className="text-2xl font-bold">{likesReceived}</p>
           <p className="text-xs text-muted-foreground mt-1">{likesReceived === 1 ? "Like received" : "Likes received"}</p>
         </div>
-        <div className="rounded-xl border border-border p-4 text-center">
+        <div className="rounded-xl border border-border p-4 text-center relative">
+          {isTopStreaker && (
+            <Crown className="w-4 h-4 text-primary fill-primary absolute top-2 right-2" aria-label="Top streaker on the platform" />
+          )}
           <p className="text-2xl font-bold text-primary">{streak}</p>
           <p className="text-xs text-muted-foreground mt-1">Day streak</p>
         </div>

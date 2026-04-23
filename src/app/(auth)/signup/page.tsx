@@ -33,7 +33,14 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setError(error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("rate limit") || msg.includes("email rate")) {
+        setError("Too many sign-up attempts right now. Please wait a few minutes and try again.");
+      } else if (msg.includes("already registered") || msg.includes("user already exists")) {
+        setError("An account with this email already exists. Try signing in instead.");
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
     } else {
       router.push("/feed");

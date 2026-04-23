@@ -94,6 +94,16 @@ export async function getArtistByTrackId(trackId: string): Promise<SpotifyArtist
   return getArtistById(artistId);
 }
 
+export async function getTrackById(trackId: string): Promise<SpotifyTrack | null> {
+  const token = await getSpotifyToken();
+  const res = await fetch(`https://api.spotify.com/v1/tracks/${encodeURIComponent(trackId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function getArtistByName(name: string): Promise<SpotifyArtist | null> {
   const token = await getSpotifyToken();
 

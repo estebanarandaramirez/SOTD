@@ -1,21 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export function PostReminderBanner() {
-  const [dismissed, setDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("post-reminder-dismissed") === "1";
-  });
+  // null = still checking, true = show, false = hide
+  const [show, setShow] = useState<boolean | null>(null);
 
-  if (dismissed) return null;
+  useEffect(() => {
+    if (sessionStorage.getItem("post-reminder-dismissed") === "1") {
+      setShow(false);
+      return;
+    }
+
+    // Use the device's local date — same format used when creating posts
+    const localDate = new Date().toLocaleDateString("en-CA");
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setShow(false); return; }
+      const { count } = await supabase
+        .from("posts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("posted_date", localDate);
+      setShow((count ?? 0) === 0);
+    });
+  }, []);
+
+  if (!show) return null;
 
   return (
     <div className="relative rounded-2xl border border-border bg-card p-6 text-center space-y-3">
       <button
-        onClick={() => { sessionStorage.setItem("post-reminder-dismissed", "1"); setDismissed(true); }}
+        onClick={() => {
+          sessionStorage.setItem("post-reminder-dismissed", "1");
+          setShow(false);
+        }}
         className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
         aria-label="Dismiss reminder"
       >

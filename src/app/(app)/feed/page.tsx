@@ -91,12 +91,15 @@ export default async function FeedPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().split("T")[0];
+  // Use a 2-day window so users in UTC+ timezones (whose local date is ahead of server UTC)
+  // are correctly recognised as having posted today.
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
   const { count } = await supabase
     .from("posts")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .eq("posted_date", today);
+    .gte("posted_date", yesterday.toISOString().split("T")[0]);
 
   const hasPostedToday = (count ?? 0) > 0;
   const activeFilter: Filter =
@@ -151,7 +154,8 @@ export default async function FeedPage({
         <ViewToggle current={view} />
       </div>
 
-      {!hasPostedToday && <PostReminderBanner />}
+      {/* Banner self-checks via client-side Supabase using device local date */}
+      <PostReminderBanner />
 
       <Suspense
         key={activeFilter}
