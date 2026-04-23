@@ -105,6 +105,33 @@ export interface Database {
           body?: string;
         };
       };
+      spotify_exports: {
+        Row: {
+          user_id: string;
+          playlist_id: string;
+          access_token: string | null;
+          refresh_token: string;
+          token_expires_at: string | null;
+          enabled: boolean;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          playlist_id: string;
+          access_token?: string | null;
+          refresh_token: string;
+          token_expires_at?: string | null;
+          enabled?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          playlist_id?: string;
+          access_token?: string | null;
+          refresh_token?: string;
+          token_expires_at?: string | null;
+          enabled?: boolean;
+        };
+      };
       notifications: {
         Row: {
           id: string;

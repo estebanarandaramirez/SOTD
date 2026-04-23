@@ -12,6 +12,7 @@ import { loadFeedPosts } from "./actions";
 import type { FeedPost } from "@/types/database";
 import { NotificationBell } from "@/components/notification-bell";
 import { PostReminderBanner } from "@/components/post-reminder-banner";
+import { ExportFeedButton } from "@/components/export-feed-button";
 
 const FILTERS = [
   { label: "Today",      value: "today" },
@@ -102,6 +103,20 @@ export default async function FeedPage({
     .gte("posted_date", yesterday.toISOString().split("T")[0]);
 
   const hasPostedToday = (count ?? 0) > 0;
+
+  const { data: exportRow } = await supabase
+    .from("spotify_exports")
+    .select("enabled")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const exportState =
+    exportRow == null
+      ? ({ status: "none" } as const)
+      : exportRow.enabled
+      ? ({ status: "enabled" } as const)
+      : ({ status: "disabled" } as const);
+
   const activeFilter: Filter =
     searchParams.filter === "week" ? "week"
     : searchParams.filter === "month" ? "month"
@@ -121,6 +136,7 @@ export default async function FeedPage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <ExportFeedButton exportState={exportState} />
           <NotificationBell variant="icon" />
           {!hasPostedToday && (
             <Link
