@@ -10,6 +10,7 @@ export function FollowTabs({ username, activeTab }: FollowTabsProps) {
   return (
     <div className="flex border-b border-border">
       <Link
+        replace
         href={`/profile/${username}/followers`}
         className={cn(
           "flex-1 py-2.5 text-sm font-medium text-center transition-colors",
@@ -21,6 +22,7 @@ export function FollowTabs({ username, activeTab }: FollowTabsProps) {
         Followers
       </Link>
       <Link
+        replace
         href={`/profile/${username}/following`}
         className={cn(
           "flex-1 py-2.5 text-sm font-medium text-center transition-colors",

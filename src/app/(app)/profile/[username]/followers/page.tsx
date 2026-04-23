@@ -39,7 +39,7 @@ export default async function FollowersPage({ params }: { params: { username: st
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <BackButton href={`/profile/${profile.username}`} />
+        <BackButton />
         <h1 className="text-lg font-bold">@{profile.username}</h1>
       </div>
       <FollowTabs username={profile.username} activeTab="followers" />
