@@ -126,10 +126,11 @@ export default async function FeedPage({
         <div>
           <h1 className="text-xl font-bold">Friends</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {activeFilter === "today" ? "Today's picks" : activeFilter === "week" ? "This week's picks" : "This month's picks"} from people you follow
+            {activeFilter === "today" ? "Today's picks" : activeFilter === "week" ? "This week's picks" : "This month's picks"}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <ExportFeedButton exportState={exportState} />
           <NotificationBell variant="icon" />
           {!hasPostedToday && (
             <Link
@@ -142,7 +143,7 @@ export default async function FeedPage({
         </div>
       </div>
 
-      {/* Time filters + view toggle + export */}
+      {/* Time filters + view toggle */}
       <div className="flex items-center gap-2">
         <div className="flex gap-2 flex-1">
           {FILTERS.map(({ label, value }) => (
@@ -160,7 +161,6 @@ export default async function FeedPage({
             </Link>
           ))}
         </div>
-        <ExportFeedButton exportState={exportState} />
         <ViewToggle current={view} />
       </div>
 
