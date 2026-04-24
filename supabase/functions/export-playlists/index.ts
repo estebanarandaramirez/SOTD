@@ -90,7 +90,11 @@ async function replacePlaylistTracks(
 
 Deno.serve(async () => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  // Job runs at 5 AM UTC (1 AM EDT / midnight EST) — Eastern date has already rolled over,
+  // so query the just-completed Eastern day by subtracting 1 day.
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
 
   // Get all enabled exports
   const { data: exports, error } = await supabase
