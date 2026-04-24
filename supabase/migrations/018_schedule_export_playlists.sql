@@ -3,7 +3,7 @@
 
 select cron.schedule(
   'export-playlists-daily',
-  '0 0 * * *',
+  '0 5 * * *', -- 5 AM UTC = midnight EST (1 AM EDT in summer)
   $$
   select net.http_post(
     url     := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/export-playlists',
