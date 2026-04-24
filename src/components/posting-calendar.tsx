@@ -37,7 +37,7 @@ function buildWeeks(posts: CalendarPost[]) {
   while (col < 15) {
     const week: typeof weeks[0] = [];
     for (let d = 0; d < 7; d++) {
-      const dateStr = current.toISOString().split("T")[0];
+      const dateStr = current.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
       const month = current.getMonth();
       if (month !== lastMonth) {
         monthLabels.push({ label: MONTHS[month], col });

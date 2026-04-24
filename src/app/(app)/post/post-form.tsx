@@ -61,8 +61,7 @@ export function PostForm({ userId }: { userId: string }) {
 
     const supabase = createClient();
     const albumArt = selectedTrack.album.images[0]?.url ?? null;
-    // Use local date so the post is attributed to the user's current day
-    const posted_date = new Date().toLocaleDateString("en-CA");
+    const posted_date = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
     const { data: newPost, error } = await supabase.from("posts").insert({
       user_id: userId,

@@ -6,7 +6,7 @@ import { ViewToggle } from "@/components/view-toggle";
 import Link from "next/link";
 import { Users } from "lucide-react";
 import { Suspense } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getEasternDate } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { loadFeedPosts } from "./actions";
 import type { FeedPost } from "@/types/database";
@@ -23,16 +23,14 @@ const FILTERS = [
 type Filter = "today" | "week" | "month";
 
 function getSinceDate(filter: Filter): string {
+  if (filter === "today") return getEasternDate();
   const d = new Date();
-  if (filter === "today") {
-    return d.toISOString().split("T")[0];
-  }
   if (filter === "month") {
     d.setDate(d.getDate() - 29);
   } else {
     d.setDate(d.getDate() - 6);
   }
-  return d.toISOString().split("T")[0];
+  return d.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 }
 
 async function FeedPosts({
@@ -92,15 +90,11 @@ export default async function FeedPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Use a 2-day window so users in UTC+ timezones (whose local date is ahead of server UTC)
-  // are correctly recognised as having posted today.
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
   const { count } = await supabase
     .from("posts")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .gte("posted_date", yesterday.toISOString().split("T")[0]);
+    .eq("posted_date", getEasternDate());
 
   const hasPostedToday = (count ?? 0) > 0;
 

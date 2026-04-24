@@ -4,24 +4,18 @@ import { PostForm } from "./post-form";
 import { PostCard } from "@/components/post-card";
 import { BackButton } from "@/components/back-button";
 import type { FeedPost } from "@/types/database";
+import { getEasternDate } from "@/lib/utils";
 
 export default async function PostPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Check if user already posted today using a 2-day window to cover all timezones
-  // (posted_date is set by the client's local date, which can be ±1 day from server UTC)
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split("T")[0];
   const { data: existingPost } = await supabase
     .from("posts")
     .select("*, profiles(username, avatar_url)")
     .eq("user_id", user.id)
-    .gte("posted_date", yesterdayStr)
-    .order("posted_date", { ascending: false })
-    .limit(1)
+    .eq("posted_date", getEasternDate())
     .maybeSingle();
 
   if (existingPost) {

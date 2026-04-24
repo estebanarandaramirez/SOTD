@@ -18,6 +18,11 @@ export function formatDate(date: string | Date) {
   });
 }
 
+/** Returns today's date as YYYY-MM-DD in Eastern Time (America/New_York). */
+export function getEasternDate(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+}
+
 export function parseMentions(text: string): string[] {
   return (text.match(/@(\w+)/g) ?? []).map((m) => m.slice(1));
 }

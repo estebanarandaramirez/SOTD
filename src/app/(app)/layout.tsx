@@ -2,13 +2,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { NavSidebar } from "@/components/nav-sidebar";
 import { MobileNav } from "@/components/mobile-nav";
+import { getEasternDate } from "@/lib/utils";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getEasternDate();
 
   const [{ data: profile }, { count }] = await Promise.all([
     supabase.from("profiles").select("username").eq("id", user.id).single(),

@@ -15,8 +15,7 @@ export function PostReminderBanner() {
       return;
     }
 
-    // Use the device's local date — same format used when creating posts
-    const localDate = new Date().toLocaleDateString("en-CA");
+    const localDate = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
     const supabase = createClient();
 
     supabase.auth.getUser().then(async ({ data: { user } }) => {

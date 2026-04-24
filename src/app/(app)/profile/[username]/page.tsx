@@ -21,10 +21,10 @@ interface ProfilePageProps {
 function calcStreak(posts: { posted_date: string }[]): number {
   if (!posts.length) return 0;
   const sorted = [...posts].sort((a, b) => b.posted_date.localeCompare(a.posted_date));
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const _yesterday = new Date();
   _yesterday.setDate(_yesterday.getDate() - 1);
-  const yesterdayStr = _yesterday.toLocaleDateString("en-CA");
+  const yesterdayStr = _yesterday.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
   const mostRecent = sorted[0].posted_date;
   // Streak is dead only if the last post was before yesterday (a full day passed)
@@ -47,7 +47,7 @@ function calcStreak(posts: { posted_date: string }[]): number {
 }
 
 function formatPostedDate(dateStr: string): string {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const date = new Date(dateStr + "T12:00:00");
   const formatted = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return dateStr === today ? `Today · ${formatted}` : formatted;
