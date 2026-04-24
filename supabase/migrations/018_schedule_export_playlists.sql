@@ -8,8 +8,8 @@ select cron.schedule(
   select net.http_post(
     url     := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/export-playlists',
     headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY'
+      'Content-Type',   'application/json',
+      'x-cron-secret',  'YOUR_CRON_SECRET'
     ),
     body    := '{}'::jsonb
   )

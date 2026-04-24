@@ -88,7 +88,12 @@ async function replacePlaylistTracks(
   }
 }
 
-Deno.serve(async () => {
+const CRON_SECRET = Deno.env.get("CRON_SECRET");
+
+Deno.serve(async (req) => {
+  if (!CRON_SECRET || req.headers.get("x-cron-secret") !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   // Job runs at 5 AM UTC (1 AM EDT / midnight EST) — Eastern date has already rolled over,
   // so query the just-completed Eastern day by subtracting 1 day.
