@@ -122,25 +122,25 @@ export default async function FeedPage({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div>
+        <div className="flex items-center justify-between gap-4">
           <h1 className="text-xl font-bold">Friends</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {activeFilter === "today" ? "Today's picks" : activeFilter === "week" ? "This week's picks" : "This month's picks"}
-          </p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ExportFeedButton exportState={exportState} />
+            <NotificationBell variant="icon" />
+            {!hasPostedToday && (
+              <Link
+                href="/post"
+                className="px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                + Post today
+              </Link>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <ExportFeedButton exportState={exportState} />
-          <NotificationBell variant="icon" />
-          {!hasPostedToday && (
-            <Link
-              href="/post"
-              className="px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              + Post today
-            </Link>
-          )}
-        </div>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {activeFilter === "today" ? "Today's picks" : activeFilter === "week" ? "This week's picks" : "This month's picks"}
+        </p>
       </div>
 
       {/* Time filters + view toggle */}
