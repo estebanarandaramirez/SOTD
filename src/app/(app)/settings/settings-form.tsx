@@ -74,6 +74,10 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (username.length < 3) {
+      setError("Username must be at least 3 characters.");
+      return;
+    }
     if (bio.trim() && containsProfanity(bio.trim())) {
       setError("Your bio contains inappropriate language.");
       return;

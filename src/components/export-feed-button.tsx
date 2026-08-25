@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Music } from "lucide-react";
+import { Check, Music, AlertTriangle } from "lucide-react";
 import { setSpotifyExportEnabled } from "@/app/(app)/feed/spotify-actions";
 
 type ExportState =
   | { status: "none" }
   | { status: "enabled" }
-  | { status: "disabled" };
+  | { status: "disabled" }
+  | { status: "expired" };
 
 interface ExportFeedButtonProps {
   exportState: ExportState;
 }
 
 export function ExportFeedButton({ exportState }: ExportFeedButtonProps) {
-  const [dialog, setDialog] = useState<"connect" | "disable" | "reenable" | null>(null);
+  const [dialog, setDialog] = useState<"connect" | "disable" | "reenable" | "reconnect" | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleDisable() {
@@ -41,6 +42,14 @@ export function ExportFeedButton({ exportState }: ExportFeedButtonProps) {
         >
           <Check className="w-3.5 h-3.5" />
           Exported
+        </button>
+      ) : exportState.status === "expired" ? (
+        <button
+          onClick={() => setDialog("reconnect")}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-medium hover:bg-amber-500/25 transition-colors"
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Reconnect Spotify
         </button>
       ) : (
         <button
@@ -87,6 +96,32 @@ export function ExportFeedButton({ exportState }: ExportFeedButtonProps) {
                     className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90 transition-opacity"
                   >
                     Connect Spotify
+                  </a>
+                </div>
+              </>
+            )}
+
+            {dialog === "reconnect" && (
+              <>
+                <h2 className="font-bold text-lg">Reconnect Spotify</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Spotify signed your account out of the export automatically after a
+                  routine expiration. Reconnect to resume daily updates to your{" "}
+                  <span className="font-semibold text-foreground">SOTD</span> playlist —
+                  your existing playlist won&apos;t be touched.
+                </p>
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => setDialog(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <a
+                    href="/api/spotify/auth"
+                    className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90 transition-opacity"
+                  >
+                    Reconnect
                   </a>
                 </div>
               </>

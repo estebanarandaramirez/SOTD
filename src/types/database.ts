@@ -113,6 +113,7 @@ export interface Database {
           refresh_token: string;
           token_expires_at: string | null;
           enabled: boolean;
+          needs_reauth: boolean;
           created_at: string;
         };
         Insert: {
@@ -122,6 +123,7 @@ export interface Database {
           refresh_token: string;
           token_expires_at?: string | null;
           enabled?: boolean;
+          needs_reauth?: boolean;
           created_at?: string;
         };
         Update: {
@@ -130,6 +132,7 @@ export interface Database {
           refresh_token?: string;
           token_expires_at?: string | null;
           enabled?: boolean;
+          needs_reauth?: boolean;
         };
       };
       notifications: {

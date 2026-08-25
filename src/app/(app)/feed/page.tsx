@@ -100,13 +100,15 @@ export default async function FeedPage({
 
   const { data: exportRow } = await supabase
     .from("spotify_exports")
-    .select("enabled")
+    .select("enabled, needs_reauth")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const exportState =
     exportRow == null
       ? ({ status: "none" } as const)
+      : exportRow.needs_reauth
+      ? ({ status: "expired" } as const)
       : exportRow.enabled
       ? ({ status: "enabled" } as const)
       : ({ status: "disabled" } as const);

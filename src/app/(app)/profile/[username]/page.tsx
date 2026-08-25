@@ -121,8 +121,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const likesReceived = (likeStats ?? []).reduce((sum: number, p: RawPost) => sum + (p.likes?.[0]?.count ?? 0), 0);
   const streak = calcStreak(calendarPosts ?? []);
-  const topStreakerId: string | null = (topStreakerResult?.data as { user_id: string }[] | null)?.[0]?.user_id ?? null;
-  const isTopStreaker = streak > 0 && topStreakerId === profile.id;
+  const topStreakerIds = new Set((topStreakerResult?.data as { user_id: string }[] | null ?? []).map(r => r.user_id));
+  const isTopStreaker = streak > 0 && topStreakerIds.has(profile.id);
 
   const isOwnProfile = user?.id === profile.id;
   const isFollowing = (isFollowingCount ?? 0) > 0;

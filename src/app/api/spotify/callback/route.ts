@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdmin } from "@supabase/supabase-js";
+
+/** Supabase admin client that bypasses RLS — used for mobile OAuth writes. */
+function adminClient() {
+  return createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -16,11 +25,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/feed?spotify_error=1`);
   }
 
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(`${origin}/login`);
+  // Parse mobile flag and userId embedded in state (format: uuid:userId:mobile)
+  const parts = state.split(":");
+  const isMobile = parts[2] === "mobile";
+  const mobileUserId = isMobile ? parts[1] : null;
 
-  // Exchange code for tokens
+  let userId: string;
+
+  if (isMobile && mobileUserId) {
+    userId = mobileUserId;
+  } else {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.redirect(`${origin}/login`);
+    userId = user.id;
+  }
+
+  // Exchange code for Spotify tokens
   const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: {
@@ -43,7 +64,7 @@ export async function GET(request: NextRequest) {
 
   const { access_token, refresh_token, expires_in } = await tokenRes.json();
 
-  // Get Spotify user to derive their user ID for the playlist endpoint
+  // Get Spotify user to derive their ID for the playlist endpoint
   const meRes = await fetch("https://api.spotify.com/v1/me", {
     headers: { Authorization: `Bearer ${access_token}` },
     cache: "no-store",
@@ -75,17 +96,22 @@ export async function GET(request: NextRequest) {
   }
   const playlist = await playlistRes.json();
 
-  // Upsert — handles both first-time connect and reconnect after disabling
-  await supabase.from("spotify_exports").upsert({
-    user_id: user.id,
+  // Mobile: use admin client (no session cookie). Web: SSR client satisfies RLS.
+  const db = isMobile ? adminClient() : createClient();
+  await db.from("spotify_exports").upsert({
+    user_id: userId,
     playlist_id: playlist.id,
     access_token,
     refresh_token,
     token_expires_at: new Date(Date.now() + expires_in * 1000).toISOString(),
     enabled: true,
+    needs_reauth: false,
   });
 
-  const response = NextResponse.redirect(`${origin}/feed?spotify_connected=1`);
+  const response = isMobile
+    ? NextResponse.redirect(`${origin}/spotify-connected`)
+    : NextResponse.redirect(`${origin}/feed?spotify_connected=1`);
+
   response.cookies.delete("spotify_oauth_state");
   return response;
 }

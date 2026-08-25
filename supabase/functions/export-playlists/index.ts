@@ -19,6 +19,10 @@ interface TokenResult {
   expires_at: string;
 }
 
+/** Spotify refresh tokens expire after 6 months — a dead one returns invalid_grant
+ *  and must be discarded rather than retried (https://developer.spotify.com, June 2026). */
+class InvalidGrantError extends Error {}
+
 async function refreshSpotifyToken(refreshToken: string): Promise<TokenResult> {
   const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
@@ -32,7 +36,19 @@ async function refreshSpotifyToken(refreshToken: string): Promise<TokenResult> {
     }),
   });
 
-  if (!res.ok) throw new Error(`Token refresh failed: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text();
+    let code: string | undefined;
+    try {
+      code = JSON.parse(body).error;
+    } catch {
+      // non-JSON error body, fall through with code undefined
+    }
+    if (code === "invalid_grant") {
+      throw new InvalidGrantError("Refresh token expired or revoked");
+    }
+    throw new Error(`Token refresh failed: ${res.status} ${body}`);
+  }
 
   const data = await res.json();
   return {
@@ -128,7 +144,22 @@ Deno.serve(async (req) => {
 
       if (trackUris.length === 0) return { user_id: row.user_id, skipped: true };
 
-      const token = await getValidToken(row, supabase);
+      let token: string;
+      try {
+        token = await getValidToken(row, supabase);
+      } catch (err) {
+        if (err instanceof InvalidGrantError) {
+          // Discard the dead token and disable export instead of retrying it every night —
+          // the user needs to reconnect through the OAuth flow to get a fresh refresh token.
+          await supabase
+            .from("spotify_exports")
+            .update({ enabled: false, needs_reauth: true, access_token: null })
+            .eq("user_id", row.user_id);
+          return { user_id: row.user_id, reauth_required: true };
+        }
+        throw err;
+      }
+
       await replacePlaylistTracks(row.playlist_id, trackUris, token);
 
       return { user_id: row.user_id, tracks: trackUris.length };
