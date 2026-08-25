@@ -155,6 +155,11 @@ Deno.serve(async (req) => {
             .from("spotify_exports")
             .update({ enabled: false, needs_reauth: true, access_token: null })
             .eq("user_id", row.user_id);
+          // Notification insert triggers the existing send-push webhook so the user
+          // finds out immediately instead of only noticing the playlist went stale.
+          await supabase
+            .from("notifications")
+            .insert({ user_id: row.user_id, type: "spotify_reauth" });
           return { user_id: row.user_id, reauth_required: true };
         }
         throw err;

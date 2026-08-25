@@ -87,6 +87,7 @@ function buildMessage(type: string, actor: string): { title: string; body: strin
     case "comment":         return { title: "New comment",    body: `@${actor} commented on your post` };
     case "mention_post":    return { title: "You were mentioned", body: `@${actor} mentioned you in a post` };
     case "mention_comment": return { title: "You were mentioned", body: `@${actor} mentioned you in a comment` };
+    case "spotify_reauth":  return { title: "Reconnect Spotify", body: "Spotify signed you out — reconnect to resume your SOTD playlist export." };
     default:                return { title: "Song of the Day", body: `New activity from @${actor}` };
   }
 }

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { timeAgo, cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import { Music } from "lucide-react";
 import { BackButton } from "@/components/back-button";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,6 +60,33 @@ export default async function NotificationsPage() {
             const post = n.post as { id: string; track_name: string } | null;
             const { action } = notificationText(n);
             const hasPost = n.type !== "follow" && post?.id;
+
+            if (n.type === "spotify_reauth") {
+              return (
+                <Link
+                  key={n.id}
+                  href="/feed"
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors",
+                    !n.read && "bg-primary/5"
+                  )}
+                >
+                  <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                    <Music className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm leading-snug">
+                      <span className="font-semibold">Reconnect Spotify</span>{" "}
+                      <span className="text-muted-foreground">
+                        — Spotify signed you out, tap to reconnect your export
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
+                  </div>
+                  {!n.read && <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />}
+                </Link>
+              );
+            }
 
             return (
               <div

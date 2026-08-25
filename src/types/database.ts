@@ -139,7 +139,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          actor_id: string;
+          actor_id: string | null;
           type: string;
           post_id: string | null;
           read: boolean;
@@ -148,7 +148,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          actor_id: string;
+          actor_id?: string | null;
           type: string;
           post_id?: string | null;
           read?: boolean;
