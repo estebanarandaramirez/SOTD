@@ -130,7 +130,9 @@ Deno.serve(async (req) => {
 
   const results = await Promise.allSettled(
     (exports as ExportRow[]).map(async (row) => {
-      // Get today's feed for this user: their own post + posts from who they follow
+      // get_feed's since_date is a rolling "on or after" filter (built for the feed UI's
+      // pagination), not an exact-day match — filter to just `today` ourselves so a post
+      // made after this job runs (e.g. a late/manual run) doesn't leak into this snapshot.
       const { data: posts } = await supabase.rpc("get_feed", {
         requesting_user_id: row.user_id,
         since_date: today,
@@ -139,7 +141,7 @@ Deno.serve(async (req) => {
       });
 
       const trackUris: string[] = (posts ?? [])
-        .filter((p: { spotify_track_id: string }) => !!p.spotify_track_id)
+        .filter((p: { posted_date: string; spotify_track_id: string }) => p.posted_date === today && !!p.spotify_track_id)
         .map((p: { spotify_track_id: string }) => `spotify:track:${p.spotify_track_id}`);
 
       if (trackUris.length === 0) return { user_id: row.user_id, skipped: true };
