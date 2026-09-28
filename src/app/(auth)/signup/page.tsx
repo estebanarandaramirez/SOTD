@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Music2 } from "lucide-react";
+import { Mail, Music2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
@@ -13,6 +13,9 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +29,7 @@ export default function SignupPage() {
     }
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { username } },
@@ -42,10 +45,51 @@ export default function SignupPage() {
         setError(error.message);
       }
       setLoading(false);
+    } else if (!data.session) {
+      // Email confirmation is required — no session yet, so /feed would just bounce to /login.
+      setConfirmationSent(true);
+      setLoading(false);
     } else {
       router.push("/feed");
       router.refresh();
     }
+  }
+
+  async function handleResend() {
+    setResending(true);
+    const supabase = createClient();
+    await supabase.auth.resend({ type: "signup", email });
+    setResending(false);
+    setResent(true);
+  }
+
+  if (confirmationSent) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4 bg-background">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Mail className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Confirmation email sent</h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Check <span className="font-medium text-foreground">{email}</span> for a link to
+              activate your account.
+            </p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Remember to check your spam folder.
+            </p>
+          </div>
+          <button
+            onClick={handleResend}
+            disabled={resending || resent}
+            className="text-sm text-primary font-medium hover:underline disabled:opacity-50 disabled:no-underline"
+          >
+            {resent ? "Email resent" : resending ? "Resending…" : "Didn't get it? Resend email"}
+          </button>
+        </div>
+      </main>
+    );
   }
 
   return (
