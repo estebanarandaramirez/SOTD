@@ -39,7 +39,7 @@ export default function PrivacyPage() {
       <p>The App is not directed at children under 13. We do not knowingly collect data from children under 13.</p>
 
       <h2>Contact</h2>
-      <p>Questions? Email us at <a href="mailto:itzvan98@hotmail.com">itzvan98@hotmail.com</a>.</p>
+      <p>Questions? Email us at <a href="mailto:support@sotd.dev">support@sotd.dev</a>.</p>
     </main>
   )
 }
