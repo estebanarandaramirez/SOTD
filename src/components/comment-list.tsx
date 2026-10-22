@@ -52,21 +52,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
   const [reportMenuFor, setReportMenuFor] = useState<string | null>(null);
-
-  async function reportComment(commentId: string) {
-    if (!currentUserId || reportedIds.has(commentId)) return;
-    setReportedIds((prev) => new Set(prev).add(commentId));
-    const supabase = createClient();
-    await supabase.from("reports").insert({
-      reporter_id: currentUserId,
-      content_type: "comment",
-      content_id: commentId,
-      reason: "Reported comment",
-    });
-    setReportMenuFor(null);
-  }
 
   // Mention autocomplete
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -285,13 +271,15 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
         </div>
       )}
 
-      <ReportSheet
-        open={reportMenuFor !== null}
-        onClose={() => setReportMenuFor(null)}
-        onReport={() => reportMenuFor && reportComment(reportMenuFor)}
-        reported={reportMenuFor ? reportedIds.has(reportMenuFor) : false}
-        label="comment"
-      />
+      {currentUserId && reportMenuFor && (
+        <ReportSheet
+          open={reportMenuFor !== null}
+          onClose={() => setReportMenuFor(null)}
+          currentUserId={currentUserId}
+          contentType="comment"
+          contentId={reportMenuFor}
+        />
+      )}
     </div>
   );
 }

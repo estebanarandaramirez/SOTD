@@ -38,21 +38,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
   const [noteError, setNoteError] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const isOwnPost = currentUserId === post.user_id;
-  const [reported, setReported] = useState(false);
   const [reportMenuOpen, setReportMenuOpen] = useState(false);
-
-  async function reportPost() {
-    if (!currentUserId || reported) return;
-    setReported(true);
-    const supabase = createClient();
-    await supabase.from("reports").insert({
-      reporter_id: currentUserId,
-      content_type: "post",
-      content_id: post.id,
-      reason: "Reported post",
-    });
-    setReportMenuOpen(false);
-  }
 
   async function saveNote() {
     const trimmed = noteInput.trim();
@@ -225,13 +211,15 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
           />
         </div>
 
-        <ReportSheet
-          open={reportMenuOpen}
-          onClose={() => setReportMenuOpen(false)}
-          onReport={reportPost}
-          reported={reported}
-          label="post"
-        />
+        {currentUserId && (
+          <ReportSheet
+            open={reportMenuOpen}
+            onClose={() => setReportMenuOpen(false)}
+            currentUserId={currentUserId}
+            contentType="post"
+            contentId={post.id}
+          />
+        )}
       </>
     );
   }
@@ -418,13 +406,15 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
         />
       </div>
 
-      <ReportSheet
-        open={reportMenuOpen}
-        onClose={() => setReportMenuOpen(false)}
-        onReport={reportPost}
-        reported={reported}
-        label="post"
-      />
+      {currentUserId && (
+        <ReportSheet
+          open={reportMenuOpen}
+          onClose={() => setReportMenuOpen(false)}
+          currentUserId={currentUserId}
+          contentType="post"
+          contentId={post.id}
+        />
+      )}
     </>
   );
 }

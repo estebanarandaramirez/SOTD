@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { FollowButton } from "@/components/follow-button";
-import { ProfileMenuButton } from "@/components/profile-menu-button";
+import { ProfileActions } from "@/components/profile-actions";
 import { PostList } from "@/components/post-list";
 import { ViewToggle } from "@/components/view-toggle";
 import { PostingCalendar } from "@/components/posting-calendar";
@@ -78,6 +77,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     { count: followerCount },
     { count: followingCount },
     { count: isFollowingCount },
+    { count: isBlockedCount },
     { count: totalPostCount },
     { data: posts },
     { data: calendarPosts },
@@ -88,6 +88,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
     user
       ? supabase.from("follows").select("*", { count: "exact", head: true }).match({ follower_id: user.id, following_id: profile.id })
+      : Promise.resolve({ count: 0 }),
+    user
+      ? supabase.from("blocks").select("*", { count: "exact", head: true }).match({ blocker_id: user.id, blocked_id: profile.id })
       : Promise.resolve({ count: 0 }),
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     supabase
@@ -127,6 +130,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const isOwnProfile = user?.id === profile.id;
   const isFollowing = (isFollowingCount ?? 0) > 0;
+  const isBlocked = (isBlockedCount ?? 0) > 0;
 
   return (
     <div className="space-y-6">
@@ -156,14 +160,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               </Link>
             )}
             {!isOwnProfile && user && (
-              <>
-                <FollowButton
-                  currentUserId={user.id}
-                  targetUserId={profile.id}
-                  initialFollowing={isFollowing}
-                />
-                <ProfileMenuButton currentUserId={user.id} targetUserId={profile.id} />
-              </>
+              <ProfileActions
+                currentUserId={user.id}
+                targetUserId={profile.id}
+                initialFollowing={isFollowing}
+                initialBlocked={isBlocked}
+              />
             )}
             {isOwnProfile && <NotificationBell variant="icon" className="ml-auto" />}
           </div>
