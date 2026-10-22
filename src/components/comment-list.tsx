@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Pencil, Check, X, Trash2 } from "lucide-react";
+import { Send, Pencil, Check, X, Trash2, Flag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -51,6 +51,19 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
+
+  async function reportComment(commentId: string) {
+    if (!currentUserId || reportedIds.has(commentId)) return;
+    setReportedIds((prev) => new Set(prev).add(commentId));
+    const supabase = createClient();
+    await supabase.from("reports").insert({
+      reporter_id: currentUserId,
+      content_type: "comment",
+      content_id: commentId,
+      reason: "Reported comment",
+    });
+  }
 
   // Mention autocomplete
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -193,6 +206,15 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
+              )}
+              {currentUserId && currentUserId !== c.user_id && (
+                <button
+                  onClick={() => reportComment(c.id)}
+                  disabled={reportedIds.has(c.id)}
+                  className="ml-auto text-muted-foreground hover:text-foreground transition-colors disabled:text-primary"
+                >
+                  <Flag className={reportedIds.has(c.id) ? "w-3 h-3 fill-current" : "w-3 h-3"} />
+                </button>
               )}
             </div>
             {editingId === c.id ? (

@@ -158,6 +158,42 @@ export interface Database {
           read?: boolean;
         };
       };
+      blocks: {
+        Row: {
+          id: string;
+          blocker_id: string;
+          blocked_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          blocker_id: string;
+          blocked_id: string;
+          created_at?: string;
+        };
+        Update: never;
+      };
+      reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          content_type: string;
+          content_id: string;
+          reason: string | null;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          content_type: string;
+          content_id: string;
+          reason?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Update: never;
+      };
     };
     Functions: {
       get_feed: {

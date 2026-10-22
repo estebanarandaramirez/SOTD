@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MessageCircle, Music, Play, Pencil, Check, X } from "lucide-react";
+import { Heart, MessageCircle, Music, Play, Pencil, Check, X, Flag } from "lucide-react";
 import { cn, timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { containsProfanity } from "@/lib/moderation";
@@ -37,6 +37,19 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
   const [noteError, setNoteError] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const isOwnPost = currentUserId === post.user_id;
+  const [reported, setReported] = useState(false);
+
+  async function reportPost() {
+    if (!currentUserId || reported) return;
+    setReported(true);
+    const supabase = createClient();
+    await supabase.from("reports").insert({
+      reporter_id: currentUserId,
+      content_type: "post",
+      content_id: post.id,
+      reason: "Reported post",
+    });
+  }
 
   async function saveNote() {
     const trimmed = noteInput.trim();
@@ -141,6 +154,11 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span>{commentCount}</span>
               </button>
+              {!isOwnPost && currentUserId && (
+                <button onClick={reportPost} disabled={reported} className="text-muted-foreground disabled:text-primary">
+                  <Flag className={cn("w-3.5 h-3.5", reported && "fill-current")} />
+                </button>
+              )}
               <a
                 href={`https://open.spotify.com/track/${post.spotify_track_id}`}
                 target="_blank"
@@ -346,6 +364,12 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
               <MessageCircle className="w-4 h-4" />
               <span>{commentCount}</span>
             </button>
+
+            {!isOwnPost && currentUserId && (
+              <button onClick={reportPost} disabled={reported} className="text-muted-foreground disabled:text-primary">
+                <Flag className={cn("w-4 h-4", reported && "fill-current")} />
+              </button>
+            )}
 
             <a
               href={`https://open.spotify.com/track/${post.spotify_track_id}`}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { FollowButton } from "@/components/follow-button";
+import { ProfileMenuButton } from "@/components/profile-menu-button";
 import { PostList } from "@/components/post-list";
 import { ViewToggle } from "@/components/view-toggle";
 import { PostingCalendar } from "@/components/posting-calendar";
@@ -155,11 +156,14 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               </Link>
             )}
             {!isOwnProfile && user && (
-              <FollowButton
-                currentUserId={user.id}
-                targetUserId={profile.id}
-                initialFollowing={isFollowing}
-              />
+              <>
+                <FollowButton
+                  currentUserId={user.id}
+                  targetUserId={profile.id}
+                  initialFollowing={isFollowing}
+                />
+                <ProfileMenuButton currentUserId={user.id} targetUserId={profile.id} />
+              </>
             )}
             {isOwnProfile && <NotificationBell variant="icon" className="ml-auto" />}
           </div>

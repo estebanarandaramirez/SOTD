@@ -7,6 +7,7 @@ import { Music, X } from "lucide-react";
 import { SpotifySearch } from "@/components/spotify-search";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMentions } from "@/app/(app)/actions";
+import { containsProfanity } from "@/lib/moderation";
 import type { SpotifyTrack } from "@/lib/spotify";
 
 const GENRE_MAP: Record<string, string[]> = {
@@ -56,6 +57,10 @@ export function PostForm({ userId }: { userId: string }) {
 
   async function handlePost() {
     if (!selectedTrack) return;
+    if (note.trim() && containsProfanity(note.trim())) {
+      setError("Your note contains inappropriate language.");
+      return;
+    }
     setSubmitting(true);
     setError("");
 

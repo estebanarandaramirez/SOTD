@@ -1,27 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-/** Decode a Supabase Bearer JWT without a network call. */
-function getUserFromBearer(token: string): { id: string } | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(
-      Buffer.from(parts[1], "base64url").toString("utf8")
-    );
-    if (
-      typeof payload.sub !== "string" ||
-      typeof payload.exp !== "number" ||
-      Date.now() / 1000 > payload.exp ||
-      !String(payload.iss ?? "").startsWith(process.env.NEXT_PUBLIC_SUPABASE_URL!)
-    ) {
-      return null;
-    }
-    return { id: payload.sub };
-  } catch {
-    return null;
-  }
-}
+import { getUserFromBearer } from "@/lib/auth-bearer";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);

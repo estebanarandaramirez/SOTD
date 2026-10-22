@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
@@ -24,6 +25,12 @@ export default function SignupPage() {
 
     if (username.length < 3) {
       setError("Username must be at least 3 characters");
+      setLoading(false);
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setError("You must agree to the Terms of Service to continue.");
       setLoading(false);
       return;
     }
@@ -154,6 +161,21 @@ export default function SignupPage() {
             />
           </div>
 
+          <label className="flex items-start gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              I agree to the{" "}
+              <Link href="/terms" target="_blank" className="text-primary hover:underline">
+                Terms of Service
+              </Link>
+            </span>
+          </label>
+
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
               {error}
@@ -162,7 +184,7 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreedToTerms}
             className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? "Creating account…" : "Create account"}

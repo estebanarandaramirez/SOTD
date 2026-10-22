@@ -33,7 +33,7 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>Data Retention</h2>
-      <p>Your data is retained as long as your account exists. You can delete your account and all associated data by contacting us.</p>
+      <p>Your data is retained as long as your account exists. You can permanently delete your account and all associated data at any time from Settings in the App.</p>
 
       <h2>Children's Privacy</h2>
       <p>The App is not directed at children under 13. We do not knowingly collect data from children under 13.</p>

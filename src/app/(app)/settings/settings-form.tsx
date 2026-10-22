@@ -22,6 +22,9 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -101,7 +104,22 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
     setSaving(false);
   }
 
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError("");
+    const res = await fetch("/api/account/delete", { method: "POST" });
+    if (res.ok) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/login");
+    } else {
+      setDeleting(false);
+      setDeleteError("Something went wrong. Please try again.");
+    }
+  }
+
   return (
+    <>
     <form onSubmit={handleSave} className="space-y-6">
       {/* Avatar */}
       <div>
@@ -195,5 +213,55 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
         </button>
       </div>
     </form>
+
+    <div className="mt-8 pt-6 border-t border-border">
+      <button
+        type="button"
+        onClick={() => setDeleteConfirmOpen(true)}
+        className="text-sm text-destructive hover:underline"
+      >
+        Delete account
+      </button>
+    </div>
+
+    {deleteConfirmOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        onClick={() => !deleting && setDeleteConfirmOpen(false)}
+      >
+        <div
+          className="w-full max-w-sm rounded-2xl bg-card border border-border p-6 space-y-4 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="font-bold text-lg">Delete your account?</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This permanently deletes your profile, posts, comments, likes, and follows. This
+            can&apos;t be undone.
+          </p>
+          {deleteError && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+              {deleteError}
+            </p>
+          )}
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={deleting}
+              className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
