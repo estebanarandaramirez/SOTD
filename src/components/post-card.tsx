@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MessageCircle, Music, Play, Pencil, Check, X, Flag } from "lucide-react";
+import { Heart, MessageCircle, Music, Play, Pencil, Check, X, MoreVertical } from "lucide-react";
+import { ReportSheet } from "./report-sheet";
 import { cn, timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { containsProfanity } from "@/lib/moderation";
@@ -38,6 +39,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
   const [savingNote, setSavingNote] = useState(false);
   const isOwnPost = currentUserId === post.user_id;
   const [reported, setReported] = useState(false);
+  const [reportMenuOpen, setReportMenuOpen] = useState(false);
 
   async function reportPost() {
     if (!currentUserId || reported) return;
@@ -49,6 +51,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
       content_id: post.id,
       reason: "Reported post",
     });
+    setReportMenuOpen(false);
   }
 
   async function saveNote() {
@@ -155,8 +158,8 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                 <span>{commentCount}</span>
               </button>
               {!isOwnPost && currentUserId && (
-                <button onClick={reportPost} disabled={reported} className="text-muted-foreground disabled:text-primary">
-                  <Flag className={cn("w-3.5 h-3.5", reported && "fill-current")} />
+                <button onClick={() => setReportMenuOpen(true)} className="text-muted-foreground hover:text-foreground">
+                  <MoreVertical className="w-3.5 h-3.5" />
                 </button>
               )}
               <a
@@ -221,6 +224,14 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
             onCommentAdded={() => setCommentCount((n) => n + 1)}
           />
         </div>
+
+        <ReportSheet
+          open={reportMenuOpen}
+          onClose={() => setReportMenuOpen(false)}
+          onReport={reportPost}
+          reported={reported}
+          label="post"
+        />
       </>
     );
   }
@@ -366,8 +377,8 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
             </button>
 
             {!isOwnPost && currentUserId && (
-              <button onClick={reportPost} disabled={reported} className="text-muted-foreground disabled:text-primary">
-                <Flag className={cn("w-4 h-4", reported && "fill-current")} />
+              <button onClick={() => setReportMenuOpen(true)} className="text-muted-foreground hover:text-foreground">
+                <MoreVertical className="w-4 h-4" />
               </button>
             )}
 
@@ -406,6 +417,14 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
           onCommentAdded={() => setCommentCount((n) => n + 1)}
         />
       </div>
+
+      <ReportSheet
+        open={reportMenuOpen}
+        onClose={() => setReportMenuOpen(false)}
+        onReport={reportPost}
+        reported={reported}
+        label="post"
+      />
     </>
   );
 }

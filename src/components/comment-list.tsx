@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Pencil, Check, X, Trash2, Flag } from "lucide-react";
+import { Send, Pencil, Check, X, Trash2, MoreVertical } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { ReportSheet } from "./report-sheet";
 import { timeAgo, splitMentions } from "@/lib/utils";
 import { containsProfanity } from "@/lib/moderation";
 import { notifyMentions, searchUsersForMention } from "@/app/(app)/actions";
@@ -52,6 +53,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   const [editBody, setEditBody] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
+  const [reportMenuFor, setReportMenuFor] = useState<string | null>(null);
 
   async function reportComment(commentId: string) {
     if (!currentUserId || reportedIds.has(commentId)) return;
@@ -63,6 +65,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
       content_id: commentId,
       reason: "Reported comment",
     });
+    setReportMenuFor(null);
   }
 
   // Mention autocomplete
@@ -209,11 +212,10 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
               )}
               {currentUserId && currentUserId !== c.user_id && (
                 <button
-                  onClick={() => reportComment(c.id)}
-                  disabled={reportedIds.has(c.id)}
-                  className="ml-auto text-muted-foreground hover:text-foreground transition-colors disabled:text-primary"
+                  onClick={() => setReportMenuFor(c.id)}
+                  className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <Flag className={reportedIds.has(c.id) ? "w-3 h-3 fill-current" : "w-3 h-3"} />
+                  <MoreVertical className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
@@ -282,6 +284,14 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
           </form>
         </div>
       )}
+
+      <ReportSheet
+        open={reportMenuFor !== null}
+        onClose={() => setReportMenuFor(null)}
+        onReport={() => reportMenuFor && reportComment(reportMenuFor)}
+        reported={reportMenuFor ? reportedIds.has(reportMenuFor) : false}
+        label="comment"
+      />
     </div>
   );
 }

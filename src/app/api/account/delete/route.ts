@@ -11,6 +11,19 @@ function adminClient() {
   );
 }
 
+// The mobile app's WebView runs on capacitor://localhost, cross-origin from
+// sotd.dev, and the Authorization header triggers a CORS preflight — both need
+// a response here or the browser never sends the actual POST.
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
@@ -28,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: CORS_HEADERS });
   }
 
   // profiles.id -> auth.users(id) ON DELETE CASCADE removes the profile and
@@ -37,8 +50,8 @@ export async function POST(request: NextRequest) {
   const { error } = await adminClient().auth.admin.deleteUser(userId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: CORS_HEADERS });
   }
 
-  return NextResponse.json({ deleted: true });
+  return NextResponse.json({ deleted: true }, { headers: CORS_HEADERS });
 }
