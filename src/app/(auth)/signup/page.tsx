@@ -39,7 +39,10 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username } },
+      options: {
+        data: { username },
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
 
     if (error) {
@@ -65,7 +68,11 @@ export default function SignupPage() {
   async function handleResend() {
     setResending(true);
     const supabase = createClient();
-    await supabase.auth.resend({ type: "signup", email });
+    await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/login` },
+    });
     setResending(false);
     setResent(true);
   }
