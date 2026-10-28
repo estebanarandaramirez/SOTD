@@ -57,7 +57,7 @@ export default async function AdminReportsPage({
 
   const [{ data: posts }, { data: comments }, { data: targetProfiles }, { data: reporterProfiles }] = await Promise.all([
     postIds.length
-      ? supabase.from("posts").select("id, track_name, user_id, profiles(username)").in("id", postIds)
+      ? supabase.from("posts").select("id, track_name, user_id, profiles!posts_user_id_fkey(username)").in("id", postIds)
       : Promise.resolve({ data: [] }),
     commentIds.length
       ? supabase.from("comments").select("id, body, user_id, profiles(username)").in("id", commentIds)
