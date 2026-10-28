@@ -34,7 +34,10 @@ export default async function AdminReportsPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== ADMIN_USER_ID) notFound();
 
-  const window: Window = searchParams.window === "24h" || searchParams.window === "7d" ? searchParams.window : "7d";
+  const window: Window =
+    searchParams.window === "24h" || searchParams.window === "7d" || searchParams.window === "all"
+      ? searchParams.window
+      : "7d";
   const since = windowStart(window);
 
   // reports is locked to reporter_id = auth.uid() by RLS — the admin needs every
@@ -101,6 +104,37 @@ export default async function AdminReportsPage({
   }
   const sortedGroups = Array.from(groups.values()).sort((a, b) => b.length - a.length);
 
+  // "All time" would otherwise dump every report ever filed — instead roll it up
+  // into who's being reported most and why, which is what's actually actionable.
+  const offenders = new Map<string, { username: string; count: number }>();
+  const reasons = new Map<string, number>();
+  if (window === "all") {
+    for (const r of reports) {
+      reasons.set(r.reason ?? "No reason given", (reasons.get(r.reason ?? "No reason given") ?? 0) + 1);
+
+      let offenderId: string | null = null;
+      let username = "?";
+      if (r.content_type === "post") {
+        const p = postMap.get(r.content_id);
+        if (p) { offenderId = p.user_id; username = p.profiles?.username ?? "?"; }
+      } else if (r.content_type === "comment") {
+        const c = commentMap.get(r.content_id);
+        if (c) { offenderId = c.user_id; username = c.profiles?.username ?? "?"; }
+      } else {
+        const p = userMap.get(r.content_id);
+        if (p) { offenderId = r.content_id; username = p.username; }
+      }
+      if (!offenderId) continue;
+      const existing = offenders.get(offenderId);
+      offenders.set(offenderId, { username, count: (existing?.count ?? 0) + 1 });
+    }
+  }
+  const topOffenders = Array.from(offenders.entries())
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+  const topReasons = Array.from(reasons.entries()).sort((a, b) => b[1] - a[1]);
+
   const tabs: { key: Window; label: string }[] = [
     { key: "24h", label: "Last 24 hours" },
     { key: "7d", label: "Last 7 days" },
@@ -112,7 +146,9 @@ export default async function AdminReportsPage({
       <div>
         <h1 className="text-xl font-bold">Reports</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {reports.length} report{reports.length === 1 ? "" : "s"} · {sortedGroups.length} distinct item{sortedGroups.length === 1 ? "" : "s"}
+          {window === "all"
+            ? `${reports.length} report${reports.length === 1 ? "" : "s"} · ${topOffenders.length} reported ${topOffenders.length === 1 ? "person" : "people"}`
+            : `${reports.length} report${reports.length === 1 ? "" : "s"} · ${sortedGroups.length} distinct item${sortedGroups.length === 1 ? "" : "s"}`}
         </p>
       </div>
 
@@ -130,7 +166,42 @@ export default async function AdminReportsPage({
         ))}
       </div>
 
-      {sortedGroups.length === 0 ? (
+      {window === "all" ? (
+        reports.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">No reports yet.</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <h2 className="text-sm font-semibold mb-2">Top reported people</h2>
+              <div className="space-y-2">
+                {topOffenders.map((o) => (
+                  <div key={o.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+                    <Link href={`/profile/${o.username}`} className="font-medium truncate hover:underline">
+                      @{o.username}
+                    </Link>
+                    <span className="flex-shrink-0 px-2.5 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-semibold">
+                      {o.count} report{o.count === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold mb-2">Most common reasons</h2>
+              <div className="space-y-2">
+                {topReasons.map(([reason, count]) => (
+                  <div key={reason} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+                    <span className="truncate">{reason}</span>
+                    <span className="flex-shrink-0 px-2.5 py-1 rounded-full bg-secondary text-xs font-semibold">
+                      {count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      ) : sortedGroups.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8 text-center">No reports in this window.</p>
       ) : (
         <div className="space-y-3">
