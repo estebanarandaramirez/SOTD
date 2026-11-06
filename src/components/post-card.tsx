@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, MessageCircle, Music, Play, Pencil, Check, X, MoreVertical } from "lucide-react";
 import { ReportSheet } from "./report-sheet";
+import { ShareButton } from "./share-button";
 import { cn, timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { containsProfanity } from "@/lib/moderation";
@@ -148,6 +149,13 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                   <MoreVertical className="w-3.5 h-3.5" />
                 </button>
               )}
+              <ShareButton
+                path={`/post/${post.id}`}
+                title={`${post.username} on SOTD`}
+                text={`${post.username} is listening to "${post.track_name}" by ${post.artist_name}`}
+                className="text-muted-foreground hover:text-foreground"
+                iconClassName="w-3.5 h-3.5"
+              />
               <a
                 href={`https://open.spotify.com/track/${post.spotify_track_id}`}
                 target="_blank"
@@ -369,6 +377,14 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                 <MoreVertical className="w-4 h-4" />
               </button>
             )}
+
+            <ShareButton
+              path={`/post/${post.id}`}
+              title={`${post.username} on SOTD`}
+              text={`${post.username} is listening to "${post.track_name}" by ${post.artist_name}`}
+              className="text-muted-foreground hover:text-foreground"
+              iconClassName="w-4 h-4"
+            />
 
             <a
               href={`https://open.spotify.com/track/${post.spotify_track_id}`}

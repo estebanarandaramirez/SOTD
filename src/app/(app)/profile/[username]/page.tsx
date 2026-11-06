@@ -7,6 +7,7 @@ import { PostingCalendar } from "@/components/posting-calendar";
 import Image from "next/image";
 import Link from "next/link";
 import { Crown } from "lucide-react";
+import { ShareButton } from "@/components/share-button";
 
 import { cookies } from "next/headers";
 import type { FeedPost } from "@/types/database";
@@ -167,6 +168,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 initialBlocked={isBlocked}
               />
             )}
+            <ShareButton
+              path={`/profile/${profile.username}`}
+              title={`@${profile.username} on SOTD`}
+              text={`Check out @${profile.username}'s songs on SOTD`}
+              className="p-1.5 text-muted-foreground hover:text-foreground"
+              iconClassName="w-4 h-4"
+            />
             {isOwnProfile && <NotificationBell variant="icon" className="ml-auto" />}
           </div>
 
