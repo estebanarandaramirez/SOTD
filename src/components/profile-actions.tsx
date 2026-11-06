@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, UserMinus, MoreVertical, Flag, Ban } from "lucide-react";
+import { UserPlus, UserMinus, MoreVertical, Flag, Ban, Share2, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { ReportSheet } from "./report-sheet";
@@ -10,6 +10,7 @@ import { ReportSheet } from "./report-sheet";
 interface ProfileActionsProps {
   currentUserId: string;
   targetUserId: string;
+  targetUsername: string;
   initialFollowing: boolean;
   initialBlocked: boolean;
 }
@@ -17,6 +18,7 @@ interface ProfileActionsProps {
 export function ProfileActions({
   currentUserId,
   targetUserId,
+  targetUsername,
   initialFollowing,
   initialBlocked,
 }: ProfileActionsProps) {
@@ -27,6 +29,26 @@ export function ProfileActions({
   const [menuOpen, setMenuOpen] = useState(false);
   const [unblockConfirmOpen, setUnblockConfirmOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    const url = `${window.location.origin}/profile/${targetUsername}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `@${targetUsername} on SOTD`, text: `Check out @${targetUsername}'s songs on SOTD`, url });
+      } catch {
+        // User dismissed the native share sheet.
+      }
+      setMenuOpen(false);
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+      setMenuOpen(false);
+    }, 900);
+  }
 
   async function toggleFollow() {
     setLoading(true);
@@ -149,6 +171,13 @@ export function ProfileActions({
             className="w-full max-w-sm rounded-2xl bg-card border border-border p-2 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              onClick={handleShare}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl hover:bg-secondary transition-colors"
+            >
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
+              {copied ? "Link copied" : "Share profile"}
+            </button>
             <button
               onClick={() => {
                 setMenuOpen(false);
