@@ -4,10 +4,10 @@ import { ProfileActions } from "@/components/profile-actions";
 import { PostList } from "@/components/post-list";
 import { ViewToggle } from "@/components/view-toggle";
 import { PostingCalendar } from "@/components/posting-calendar";
-import Image from "next/image";
 import Link from "next/link";
 import { Crown } from "lucide-react";
 import { ShareButton } from "@/components/share-button";
+import { AvatarViewer } from "@/components/avatar-viewer";
 
 import { cookies } from "next/headers";
 import type { FeedPost } from "@/types/database";
@@ -139,15 +139,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
       {/* Profile header */}
       <div className="flex items-start gap-4">
-        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-          {profile.avatar_url ? (
-            <Image src={profile.avatar_url} alt={profile.username} width={80} height={80} className="object-cover" />
-          ) : (
-            <span className="text-3xl font-bold text-muted-foreground">
-              {profile.username[0].toUpperCase()}
-            </span>
-          )}
-        </div>
+        <AvatarViewer avatarUrl={profile.avatar_url} username={profile.username} size={80} />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
