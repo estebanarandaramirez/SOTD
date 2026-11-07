@@ -158,7 +158,7 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
           id="username"
           type="text"
           value={username}
-          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))}
           required
           minLength={3}
           maxLength={30}

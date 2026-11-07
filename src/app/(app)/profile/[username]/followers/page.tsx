@@ -13,7 +13,7 @@ export default async function FollowersPage({ params }: { params: { username: st
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, username")
-    .eq("username", params.username.toLowerCase())
+    .eq("username", params.username.trim().toLowerCase())
     .single();
 
   if (!profile) notFound();
