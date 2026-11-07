@@ -96,7 +96,7 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
       .eq("id", userId);
 
     if (error) {
-      setError(error.message);
+      setError(error.code === "23505" ? "That username is taken — try another." : error.message);
     } else {
       setMessage("Profile updated!");
       router.refresh();

@@ -36,6 +36,18 @@ export default function SignupPage() {
     }
 
     const supabase = createClient();
+
+    const { data: existingUsername } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", username)
+      .maybeSingle();
+    if (existingUsername) {
+      setError("That username is taken — try another.");
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -51,6 +63,8 @@ export default function SignupPage() {
         setError("Too many sign-up attempts right now. Please wait a few minutes and try again.");
       } else if (msg.includes("already registered") || msg.includes("user already exists")) {
         setError("An account with this email already exists. Try signing in instead.");
+      } else if (msg.includes("database error")) {
+        setError("That username is taken — try another.");
       } else {
         setError(error.message);
       }
