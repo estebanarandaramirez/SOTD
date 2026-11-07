@@ -40,7 +40,7 @@ export default function SignupPage() {
     const { data: existingUsername } = await supabase
       .from("profiles")
       .select("id")
-      .eq("username", username)
+      .eq("username_lower", username.toLowerCase())
       .maybeSingle();
     if (existingUsername) {
       setError("That username is taken — try another.");
@@ -143,7 +143,7 @@ export default function SignupPage() {
               id="username"
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))}
+              onChange={(e) => setUsername(e.target.value.replace(/[^A-Za-z0-9]/g, ""))}
               required
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="yourname"
