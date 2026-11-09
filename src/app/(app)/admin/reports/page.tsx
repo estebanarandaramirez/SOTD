@@ -233,7 +233,12 @@ export default async function AdminReportsPage({
                       <span>·</span>
                       <span>{r.reason ?? "No reason given"}</span>
                       <span>·</span>
-                      <span>{new Date(r.created_at).toLocaleString()}</span>
+                      <span>
+                        {new Date(r.created_at).toLocaleString("en-US", {
+                          timeZone: "America/New_York",
+                        })}{" "}
+                        ET
+                      </span>
                     </div>
                   ))}
                 </div>
