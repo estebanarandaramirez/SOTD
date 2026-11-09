@@ -25,6 +25,11 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -102,6 +107,31 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
       router.refresh();
     }
     setSaving(false);
+  }
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordMessage("");
+    setPasswordError("");
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords don't match.");
+      return;
+    }
+    setChangingPassword(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      setPasswordMessage("Password updated!");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setChangingPassword(false);
   }
 
   async function handleDeleteAccount() {
@@ -213,6 +243,53 @@ export function SettingsForm({ userId, initialUsername, initialBio, initialAvata
         </button>
       </div>
     </form>
+
+    <div className="mt-8 pt-6 border-t border-border">
+      <h2 className="text-sm font-medium mb-4">Change password</h2>
+      <form onSubmit={handlePasswordChange} className="space-y-4">
+        <div>
+          <label className="text-sm font-medium block mb-1.5" htmlFor="new-password">
+            New password
+          </label>
+          <input
+            id="new-password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            minLength={6}
+            autoComplete="new-password"
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium block mb-1.5" htmlFor="confirm-password">
+            Confirm new password
+          </label>
+          <input
+            id="confirm-password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            minLength={6}
+            autoComplete="new-password"
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        {passwordError && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{passwordError}</p>
+        )}
+        {passwordMessage && (
+          <p className="text-sm text-primary bg-primary/10 px-3 py-2 rounded-lg">{passwordMessage}</p>
+        )}
+        <button
+          type="submit"
+          disabled={changingPassword}
+          className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {changingPassword ? "Updating…" : "Update password"}
+        </button>
+      </form>
+    </div>
 
     <div className="mt-8 pt-6 border-t border-border">
       <button
