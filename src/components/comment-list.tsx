@@ -245,25 +245,24 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
             </div>
             {editingId === c.id ? (
               <div className="mt-1 space-y-1.5">
-                {c.image_url && (
-                  <ImageViewer
-                    src={c.image_url}
-                    className="block w-16 h-16 rounded-lg overflow-hidden border border-border"
-                  />
-                )}
                 <div className="flex items-center gap-1.5">
                   <input
                     type="text"
                     value={editBody}
                     onChange={(e) => setEditBody(e.target.value.slice(0, 300))}
                     onKeyDown={(e) => { if (e.key === "Enter") saveEdit(c.id); if (e.key === "Escape") setEditingId(null); }}
-                    placeholder={c.image_url ? "Add a caption…" : ""}
                     className="flex-1 text-sm px-2 py-1 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                     autoFocus
                   />
                   <button onClick={() => saveEdit(c.id)} className="text-primary hover:opacity-80"><Check className="w-3.5 h-3.5" /></button>
                   <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
                 </div>
+                {c.image_url && (
+                  <ImageViewer
+                    src={c.image_url}
+                    className="block w-16 h-16 rounded-lg overflow-hidden border border-border"
+                  />
+                )}
                 <p className="text-xs text-muted-foreground text-right">{editBody.length}/300</p>
               </div>
             ) : (

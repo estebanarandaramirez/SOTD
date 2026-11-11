@@ -82,7 +82,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
           <div className="relative w-32 flex-shrink-0 bg-muted self-stretch overflow-hidden">
             {post.image_url ? (
               <div
-                className="absolute inset-0 flex overflow-x-auto overscroll-x-contain snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+                className="absolute inset-0 flex overflow-x-auto overscroll-x-none snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
                 style={{ scrollbarWidth: "none" }}
               >
                 <div className="relative w-full h-full flex-shrink-0 snap-center">
@@ -256,7 +256,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
         <div className="relative h-72 bg-muted">
           {post.image_url ? (
             <div
-              className="absolute inset-0 flex overflow-x-auto overscroll-x-contain snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+              className="absolute inset-0 flex overflow-x-auto overscroll-x-none snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
               style={{ scrollbarWidth: "none" }}
               onScroll={(e) => {
                 const i = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth);
