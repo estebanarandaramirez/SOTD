@@ -253,7 +253,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
     <>
       <article className="bg-card border border-border rounded-2xl overflow-hidden">
         {/* Album art banner — swipeable with the post's photo, if any */}
-        <div className="relative h-72 bg-muted">
+        <div className="relative h-72 bg-muted overflow-hidden">
           {post.image_url ? (
             <div
               className="absolute inset-0 flex overflow-x-auto overscroll-x-none snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
