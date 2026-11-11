@@ -60,6 +60,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
     like_count: likeCount ?? 0,
     comment_count: commentCount ?? 0,
     liked_by_me: !!myLike,
+    image_url: raw.image_url ?? null,
   };
 
   return (

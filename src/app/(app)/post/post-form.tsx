@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Music, X } from "lucide-react";
+import { Music, X, ImagePlus } from "lucide-react";
 import { SpotifySearch } from "@/components/spotify-search";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMentions } from "@/app/(app)/actions";
@@ -45,8 +45,33 @@ export function PostForm({ userId }: { userId: string }) {
   const [genreLoading, setGenreLoading] = useState(false);
   const [genrePickerOpen, setGenrePickerOpen] = useState(false);
   const [genreQuery, setGenreQuery] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+  };
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES[file.type]) {
+      setError("Only JPG, PNG, WebP, and GIF images are allowed.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB.");
+      return;
+    }
+    setError("");
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
 
   useEffect(() => {
     if (!selectedTrack) { setGenre(null); return; }
@@ -72,6 +97,19 @@ export function PostForm({ userId }: { userId: string }) {
     const albumArt = selectedTrack.album.images[0]?.url ?? null;
     const posted_date = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      const ext = ALLOWED_IMAGE_TYPES[imageFile.type];
+      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("post-images").upload(path, imageFile);
+      if (uploadError) {
+        setError(uploadError.message);
+        setSubmitting(false);
+        return;
+      }
+      imageUrl = supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
+    }
+
     const { data: newPost, error } = await supabase.from("posts").insert({
       user_id: userId,
       spotify_track_id: selectedTrack.id,
@@ -83,6 +121,7 @@ export function PostForm({ userId }: { userId: string }) {
       preview_url: selectedTrack.preview_url,
       note: note.trim() || null,
       genre: genre,
+      image_url: imageUrl,
       posted_date,
     }).select("id").single();
 
@@ -221,6 +260,32 @@ export function PostForm({ userId }: { userId: string }) {
               className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
             <p className="text-xs text-right mt-1 text-muted-foreground">{note.length}/500</p>
+          </div>
+
+          {/* Photo (optional) */}
+          <div>
+            <label className="text-sm font-medium block mb-1.5">
+              Add a photo <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            {imagePreview ? (
+              <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => { setImageFile(null); setImagePreview(null); }}
+                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-input text-sm font-medium hover:bg-muted transition-colors cursor-pointer">
+                <ImagePlus className="w-4 h-4" />
+                Add photo
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+            )}
           </div>
 
           {error && (

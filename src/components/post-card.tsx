@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MessageCircle, Music, Play, Pencil, Check, X, MoreVertical } from "lucide-react";
+import { Heart, MessageCircle, Music, Play, Pencil, Check, X, MoreVertical, Images } from "lucide-react";
 import { PostMenu } from "./post-menu";
 import { cn, timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +39,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
   const [savingNote, setSavingNote] = useState(false);
   const isOwnPost = currentUserId === post.user_id;
   const [reportMenuOpen, setReportMenuOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   async function saveNote() {
     const trimmed = noteInput.trim();
@@ -230,30 +231,77 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
   return (
     <>
       <article className="bg-card border border-border rounded-2xl overflow-hidden">
-        {/* Album art banner */}
+        {/* Album art banner — swipeable with the post's photo, if any */}
         <div className="relative h-72 bg-muted">
-          {post.album_art_url && (
-            <Image src={post.album_art_url} alt={post.album_name} fill className="object-cover opacity-60" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/90" />
-
-          {/* Genre badge */}
-          {post.genre && (
-            <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs font-medium">
-              {post.genre}
-            </div>
-          )}
-
-          {/* Play button */}
-          {post.preview_url && (
-            <button
-              onClick={() => setShowPlayer((v) => !v)}
-              className="absolute inset-0 flex items-center justify-center"
+          {post.image_url ? (
+            <div
+              className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: "none" }}
+              onScroll={(e) => {
+                const i = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth);
+                setGalleryIndex(i);
+              }}
             >
-              <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg hover:bg-primary transition-colors">
-                <Play className="w-5 h-5 text-primary-foreground ml-0.5" />
+              <div className="relative w-full h-full flex-shrink-0 snap-center">
+                {post.album_art_url && (
+                  <Image src={post.album_art_url} alt={post.album_name} fill className="object-cover opacity-60" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/90" />
+                {post.genre && (
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs font-medium">
+                    {post.genre}
+                  </div>
+                )}
+                {post.preview_url && (
+                  <button
+                    onClick={() => setShowPlayer((v) => !v)}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg hover:bg-primary transition-colors">
+                      <Play className="w-5 h-5 text-primary-foreground ml-0.5" />
+                    </div>
+                  </button>
+                )}
               </div>
-            </button>
+              <div className="relative w-full h-full flex-shrink-0 snap-center">
+                <Image src={post.image_url} alt="" fill className="object-cover" />
+              </div>
+            </div>
+          ) : (
+            <>
+              {post.album_art_url && (
+                <Image src={post.album_art_url} alt={post.album_name} fill className="object-cover opacity-60" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/90" />
+              {post.genre && (
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs font-medium">
+                  {post.genre}
+                </div>
+              )}
+              {post.preview_url && (
+                <button
+                  onClick={() => setShowPlayer((v) => !v)}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg hover:bg-primary transition-colors">
+                    <Play className="w-5 h-5 text-primary-foreground ml-0.5" />
+                  </div>
+                </button>
+              )}
+            </>
+          )}
+
+          {post.image_url && (
+            <>
+              <div className="absolute top-3 left-3 z-10 text-white drop-shadow pointer-events-none">
+                <Images className="w-4 h-4" />
+              </div>
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 pointer-events-none">
+                {[0, 1].map((i) => (
+                  <div key={i} className={cn("w-1.5 h-1.5 rounded-full", galleryIndex === i ? "bg-white" : "bg-white/40")} />
+                ))}
+              </div>
+            </>
           )}
         </div>
 

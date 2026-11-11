@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Pencil, Check, X, Trash2, MoreVertical } from "lucide-react";
+import { Send, Pencil, Check, X, Trash2, MoreVertical, ImagePlus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -14,9 +14,17 @@ interface Comment {
   id: string;
   user_id: string;
   body: string;
+  image_url: string | null;
   created_at: string;
   profiles: { username: string; avatar_url: string | null };
 }
+
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
 
 interface CommentListProps {
   postId: string;
@@ -59,13 +67,25 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   const [mentionSuggestions, setMentionSuggestions] = useState<{ username: string }[]>([]);
   const [mentionAnchor, setMentionAnchor] = useState(0); // cursor position of the @ char
   const inputRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES[file.type]) { setCommentError("Only JPG, PNG, WebP, and GIF images are allowed."); return; }
+    if (file.size > 5 * 1024 * 1024) { setCommentError("Image must be under 5 MB."); return; }
+    setCommentError("");
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
 
   useEffect(() => {
     setLoading(true);
     const supabase = createClient();
     supabase
       .from("comments")
-      .select("id, user_id, body, created_at, profiles(username, avatar_url)")
+      .select("id, user_id, body, image_url, created_at, profiles(username, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
       .then(({ data }) => {
@@ -106,8 +126,8 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!body.trim() || !currentUserId) return;
-    if (containsProfanity(body.trim())) {
+    if ((!body.trim() && !imageFile) || !currentUserId) return;
+    if (body.trim() && containsProfanity(body.trim())) {
       setCommentError("Your comment contains inappropriate language.");
       return;
     }
@@ -115,19 +135,35 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
     setSubmitting(true);
 
     const supabase = createClient();
+
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      const ext = ALLOWED_IMAGE_TYPES[imageFile.type];
+      const path = `${currentUserId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("comment-images").upload(path, imageFile);
+      if (uploadError) {
+        setCommentError(uploadError.message);
+        setSubmitting(false);
+        return;
+      }
+      imageUrl = supabase.storage.from("comment-images").getPublicUrl(path).data.publicUrl;
+    }
+
     const { data } = await supabase
       .from("comments")
-      .insert({ post_id: postId, user_id: currentUserId, body: body.trim() })
-      .select("id, user_id, body, created_at, profiles(username, avatar_url)")
+      .insert({ post_id: postId, user_id: currentUserId, body: body.trim(), image_url: imageUrl })
+      .select("id, user_id, body, image_url, created_at, profiles(username, avatar_url)")
       .single();
 
     if (data) {
       setComments((prev) => [...prev, data as unknown as Comment]);
       onCommentAdded?.();
       // Notify mentioned users
-      await notifyMentions(body.trim(), postId, currentUserId);
+      if (body.trim()) await notifyMentions(body.trim(), postId, currentUserId);
     }
     setBody("");
+    setImageFile(null);
+    setImagePreview(null);
     setMentionQuery(null);
     setSubmitting(false);
   }
@@ -222,7 +258,13 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                 <p className="text-xs text-muted-foreground text-right">{editBody.length}/300</p>
               </div>
             ) : (
-              <CommentBody text={c.body} />
+              <>
+                {c.body && <CommentBody text={c.body} />}
+                {c.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.image_url} alt="" className="mt-1.5 max-w-[160px] max-h-[160px] rounded-lg object-cover border border-border" />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -247,7 +289,24 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
             </div>
           )}
           <form onSubmit={submit} className="space-y-1">
+            {imagePreview && (
+              <div className="relative inline-block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imagePreview} alt="" className="w-16 h-16 rounded-lg object-cover border border-border" />
+                <button
+                  type="button"
+                  onClick={() => { setImageFile(null); setImagePreview(null); }}
+                  className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-black/60 text-white"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
+              <label className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer flex-shrink-0">
+                <ImagePlus className="w-4 h-4" />
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
               <input
                 ref={inputRef}
                 type="text"
@@ -258,7 +317,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
               />
               <button
                 type="submit"
-                disabled={!body.trim() || submitting}
+                disabled={(!body.trim() && !imageFile) || submitting}
                 className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-opacity"
               >
                 <Send className="w-4 h-4" />

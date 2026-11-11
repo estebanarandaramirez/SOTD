@@ -243,6 +243,7 @@ export interface FeedPost {
   like_count: number;
   comment_count: number;
   liked_by_me: boolean;
+  image_url: string | null;
 }
 
 export interface SimilarUser {
