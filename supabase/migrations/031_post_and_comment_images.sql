@@ -48,10 +48,12 @@ create policy "comment_image_delete_own" on storage.objects
   using (bucket_id = 'comment-images' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- ============================================================
--- Add image_url to every feed-shaped RPC's output (appended at the end,
--- which CREATE OR REPLACE permits for RETURNS TABLE functions).
+-- Add image_url to every feed-shaped RPC's output. Postgres won't let
+-- CREATE OR REPLACE change a RETURNS TABLE column list even by appending,
+-- so each function is dropped (by its exact arg signature) first.
 -- ============================================================
 
+DROP FUNCTION IF EXISTS public.get_feed(uuid, date, integer, integer);
 CREATE OR REPLACE FUNCTION public.get_feed(requesting_user_id uuid, since_date date DEFAULT (CURRENT_DATE - '7 days'::interval), page_size integer DEFAULT 10, page_offset integer DEFAULT 0)
 RETURNS TABLE(id uuid, user_id uuid, username text, avatar_url text, spotify_track_id text, track_name text, artist_name text, album_name text, album_art_url text, preview_url text, note text, genre text, posted_date date, created_at timestamptz, like_count bigint, comment_count bigint, liked_by_me boolean, image_url text)
 LANGUAGE sql SECURITY DEFINER AS $$
@@ -81,6 +83,7 @@ LANGUAGE sql SECURITY DEFINER AS $$
   LIMIT page_size OFFSET page_offset;
 $$;
 
+DROP FUNCTION IF EXISTS public.get_discover(uuid, integer, integer, text);
 CREATE OR REPLACE FUNCTION public.get_discover(requesting_user_id uuid, page_size integer DEFAULT 20, page_offset integer DEFAULT 0, genre_filter text DEFAULT NULL)
 RETURNS TABLE(id uuid, user_id uuid, username text, avatar_url text, spotify_track_id text, track_name text, artist_name text, album_name text, album_art_url text, preview_url text, note text, genre text, posted_date date, created_at timestamptz, like_count bigint, comment_count bigint, liked_by_me boolean, image_url text)
 LANGUAGE sql SECURITY DEFINER AS $$
@@ -106,6 +109,7 @@ LANGUAGE sql SECURITY DEFINER AS $$
   LIMIT page_size OFFSET page_offset;
 $$;
 
+DROP FUNCTION IF EXISTS public.get_for_you(uuid, integer, integer);
 CREATE OR REPLACE FUNCTION public.get_for_you(
   requesting_user_id uuid,
   page_size  int DEFAULT 10,
@@ -166,6 +170,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.get_explore(uuid, integer, integer);
 CREATE OR REPLACE FUNCTION public.get_explore(
   requesting_user_id uuid,
   page_size  int DEFAULT 10,
@@ -226,6 +231,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.get_profile_posts(uuid, uuid, integer, integer);
 CREATE OR REPLACE FUNCTION public.get_profile_posts(
   target_user_id     uuid,
   requesting_user_id uuid DEFAULT NULL,
