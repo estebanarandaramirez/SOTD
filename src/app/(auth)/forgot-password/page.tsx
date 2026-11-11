@@ -16,10 +16,11 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError("");
 
+    // The reset link itself is built by the "Reset Password" email template
+    // (token_hash in a plain query param on our own /reset-password page),
+    // not from a redirectTo here — see reset-password/page.tsx.
     const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
 
     // Always show the same confirmation, whether or not the email exists,
     // so this can't be used to probe which emails have accounts.

@@ -7,7 +7,7 @@ export const appleAppSiteAssociation = {
     details: [
       {
         appID: `${APPLE_TEAM_ID}.com.sotd.app`,
-        paths: ["/post/*", "/profile/*"],
+        paths: ["/post/*", "/profile/*", "/reset-password"],
       },
     ],
   },

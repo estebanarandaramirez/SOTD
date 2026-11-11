@@ -19,10 +19,24 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     async function checkSession() {
       const supabase = createClient();
-      const code = new URLSearchParams(window.location.search).get("code");
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
+      const params = new URLSearchParams(window.location.search);
+      const token_hash = params.get("token_hash");
+      const type = params.get("type");
+
+      // The email link carries a token_hash in a plain query param (see the
+      // "Reset Password" template in Supabase) rather than Supabase's own
+      // /auth/v1/verify redirect chain, specifically so the token is only
+      // consumed by this page's own JS calling verifyOtp — not by a bare GET
+      // request, which link-safety prefetchers (e.g. Apple Mail) make on the
+      // original link without ever running page JS, burning a one-time token
+      // before the user gets a chance to click it themselves.
+      if (token_hash && type === "recovery") {
+        const { error } = await supabase.auth.verifyOtp({ token_hash, type: "recovery" });
+        setValidLink(!error);
+        setChecking(false);
+        return;
       }
+
       const { data: { user } } = await supabase.auth.getUser();
       setValidLink(!!user);
       setChecking(false);
