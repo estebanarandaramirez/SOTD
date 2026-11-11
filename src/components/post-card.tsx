@@ -166,7 +166,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                 <textarea
                   value={noteInput}
                   onChange={(e) => { setNoteInput(e.target.value); setNoteError(""); }}
-                  maxLength={300}
+                  maxLength={500}
                   rows={2}
                   autoFocus
                   className="w-full text-xs px-2 py-1.5 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
@@ -180,7 +180,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                     <X className="w-3 h-3" /> Cancel
                   </button>
                   <span className={cn("ml-auto text-xs", "text-muted-foreground")}>
-                    {noteInput.length}/300
+                    {noteInput.length}/500
                   </span>
                 </div>
               </div>
@@ -311,7 +311,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
               <textarea
                 value={noteInput}
                 onChange={(e) => { setNoteInput(e.target.value); setNoteError(""); }}
-                maxLength={300}
+                maxLength={500}
                 rows={3}
                 autoFocus
                 className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
@@ -332,7 +332,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                   <X className="w-3 h-3" /> Cancel
                 </button>
                 <span className={cn("ml-auto text-xs", "text-muted-foreground")}>
-                  {noteInput.length}/300
+                  {noteInput.length}/500
                 </span>
               </div>
             </div>

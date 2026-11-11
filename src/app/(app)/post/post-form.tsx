@@ -172,12 +172,12 @@ export function PostForm({ userId }: { userId: string }) {
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              maxLength={300}
+              maxLength={500}
               rows={3}
               placeholder="Why this song today?"
               className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
-            <p className="text-xs text-right mt-1 text-muted-foreground">{note.length}/300</p>
+            <p className="text-xs text-right mt-1 text-muted-foreground">{note.length}/500</p>
           </div>
 
           {error && (
