@@ -8,6 +8,8 @@ import { SpotifySearch } from "@/components/spotify-search";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMentions } from "@/app/(app)/actions";
 import { containsProfanity } from "@/lib/moderation";
+import { GENRES } from "@/lib/genres";
+import { cn } from "@/lib/utils";
 import type { SpotifyTrack } from "@/lib/spotify";
 
 const GENRE_MAP: Record<string, string[]> = {
@@ -41,6 +43,8 @@ export function PostForm({ userId }: { userId: string }) {
   const [note, setNote] = useState("");
   const [genre, setGenre] = useState<string | null>(null);
   const [genreLoading, setGenreLoading] = useState(false);
+  const [genrePickerOpen, setGenrePickerOpen] = useState(false);
+  const [genreQuery, setGenreQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -152,15 +156,54 @@ export function PostForm({ userId }: { userId: string }) {
             />
           )}
 
-          {/* Genre — auto-detected from Spotify */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">Genre</span>
-            {genreLoading && <span className="text-muted-foreground text-xs">Detecting…</span>}
-            {!genreLoading && genre && (
-              <span className="px-2.5 py-0.5 rounded-full bg-secondary text-xs font-medium">{genre}</span>
-            )}
-            {!genreLoading && !genre && (
-              <span className="text-muted-foreground text-xs">Not detected</span>
+          {/* Genre — auto-detected from Spotify, or pick your own */}
+          <div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">Genre</span>
+              {genreLoading && <span className="text-muted-foreground text-xs">Detecting…</span>}
+              {!genreLoading && genre && (
+                <span className="px-2.5 py-0.5 rounded-full bg-secondary text-xs font-medium">{genre}</span>
+              )}
+              {!genreLoading && !genre && (
+                <span className="text-muted-foreground text-xs">Not detected</span>
+              )}
+              <button
+                type="button"
+                onClick={() => setGenrePickerOpen((v) => !v)}
+                className="ml-auto text-xs text-primary hover:underline"
+              >
+                {genre ? "Change" : "Choose genre"}
+              </button>
+            </div>
+
+            {genrePickerOpen && (
+              <div className="mt-2 rounded-xl border border-border p-3 space-y-2">
+                <input
+                  type="text"
+                  value={genreQuery}
+                  onChange={(e) => setGenreQuery(e.target.value)}
+                  placeholder="Search genres…"
+                  autoFocus
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+                  {GENRES.filter((g) => g.toLowerCase().includes(genreQuery.toLowerCase())).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => { setGenre(g); setGenrePickerOpen(false); setGenreQuery(""); }}
+                      className={cn(
+                        "px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                        genre === g
+                          ? "bg-primary/20 text-primary ring-1 ring-primary"
+                          : "bg-secondary text-foreground hover:bg-secondary/80"
+                      )}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
