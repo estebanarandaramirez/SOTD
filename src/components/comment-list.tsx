@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ReportSheet } from "./report-sheet";
+import { ImageViewer } from "./image-viewer";
 import { timeAgo, splitMentions } from "@/lib/utils";
 import { containsProfanity } from "@/lib/moderation";
 import { notifyMentions, searchUsersForMention } from "@/app/(app)/actions";
@@ -169,7 +170,8 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   }
 
   async function saveEdit(commentId: string) {
-    if (!editBody.trim()) return;
+    const hasImage = comments.find((c) => c.id === commentId)?.image_url;
+    if (!editBody.trim() && !hasImage) return;
     const supabase = createClient();
     const { error } = await supabase
       .from("comments")
@@ -242,13 +244,20 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
               )}
             </div>
             {editingId === c.id ? (
-              <div className="mt-1 space-y-1">
+              <div className="mt-1 space-y-1.5">
+                {c.image_url && (
+                  <ImageViewer
+                    src={c.image_url}
+                    className="block w-16 h-16 rounded-lg overflow-hidden border border-border"
+                  />
+                )}
                 <div className="flex items-center gap-1.5">
                   <input
                     type="text"
                     value={editBody}
                     onChange={(e) => setEditBody(e.target.value.slice(0, 300))}
                     onKeyDown={(e) => { if (e.key === "Enter") saveEdit(c.id); if (e.key === "Escape") setEditingId(null); }}
+                    placeholder={c.image_url ? "Add a caption…" : ""}
                     className="flex-1 text-sm px-2 py-1 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                     autoFocus
                   />
@@ -261,8 +270,10 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
               <>
                 {c.body && <CommentBody text={c.body} />}
                 {c.image_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.image_url} alt="" className="mt-1.5 max-w-[160px] max-h-[160px] rounded-lg object-cover border border-border" />
+                  <ImageViewer
+                    src={c.image_url}
+                    className="block mt-1.5 max-w-[160px] max-h-[160px] rounded-lg overflow-hidden border border-border"
+                  />
                 )}
               </>
             )}

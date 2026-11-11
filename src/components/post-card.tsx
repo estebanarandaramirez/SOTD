@@ -79,9 +79,30 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
         <article className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="flex min-h-[88px]">
           {/* Album art – left square, clean (no overlay) */}
-          <div className="relative w-32 flex-shrink-0 bg-muted self-stretch">
-            {post.album_art_url && (
-              <Image src={post.album_art_url} alt="" fill className="object-cover opacity-70" />
+          <div className="relative w-32 flex-shrink-0 bg-muted self-stretch overflow-hidden">
+            {post.image_url ? (
+              <div
+                className="absolute inset-0 flex overflow-x-auto overscroll-x-contain snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+                style={{ scrollbarWidth: "none" }}
+              >
+                <div className="relative w-full h-full flex-shrink-0 snap-center">
+                  {post.album_art_url && (
+                    <Image src={post.album_art_url} alt="" fill className="object-cover opacity-70" />
+                  )}
+                </div>
+                <div className="relative w-full h-full flex-shrink-0 snap-center">
+                  <Image src={post.image_url} alt="" fill className="object-cover" />
+                </div>
+              </div>
+            ) : (
+              post.album_art_url && (
+                <Image src={post.album_art_url} alt="" fill className="object-cover opacity-70" />
+              )
+            )}
+            {post.image_url && (
+              <div className="absolute top-1 left-1 z-10 text-white drop-shadow pointer-events-none">
+                <Images className="w-2.5 h-2.5" />
+              </div>
             )}
           </div>
 
@@ -235,7 +256,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
         <div className="relative h-72 bg-muted">
           {post.image_url ? (
             <div
-              className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+              className="absolute inset-0 flex overflow-x-auto overscroll-x-contain snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
               style={{ scrollbarWidth: "none" }}
               onScroll={(e) => {
                 const i = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth);
