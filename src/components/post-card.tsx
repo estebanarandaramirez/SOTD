@@ -40,6 +40,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
   const isOwnPost = currentUserId === post.user_id;
   const [reportMenuOpen, setReportMenuOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [compactGalleryIndex, setCompactGalleryIndex] = useState(0);
 
   async function saveNote() {
     const trimmed = noteInput.trim();
@@ -84,6 +85,10 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
               <div
                 className="absolute inset-0 flex overflow-x-auto overscroll-x-none snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
                 style={{ scrollbarWidth: "none" }}
+                onScroll={(e) => {
+                  const i = Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth);
+                  setCompactGalleryIndex(i);
+                }}
               >
                 <div className="relative w-full h-full flex-shrink-0 snap-center">
                   {post.album_art_url && (
@@ -100,9 +105,16 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
               )
             )}
             {post.image_url && (
-              <div className="absolute top-1 left-1 z-10 text-white drop-shadow pointer-events-none">
-                <Images className="w-3.5 h-3.5" />
-              </div>
+              <>
+                <div className="absolute top-1 left-1 z-10 text-white drop-shadow pointer-events-none">
+                  <Images className="w-2.5 h-2.5" />
+                </div>
+                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10 pointer-events-none">
+                  {[0, 1].map((i) => (
+                    <div key={i} className={cn("w-1 h-1 rounded-full", compactGalleryIndex === i ? "bg-white" : "bg-white/40")} />
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
