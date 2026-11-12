@@ -101,7 +101,7 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
             )}
             {post.image_url && (
               <div className="absolute top-1 left-1 z-10 text-white drop-shadow pointer-events-none">
-                <Images className="w-2.5 h-2.5" />
+                <Images className="w-3.5 h-3.5" />
               </div>
             )}
           </div>
