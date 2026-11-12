@@ -141,7 +141,11 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
     if (imageFile) {
       const ext = ALLOWED_IMAGE_TYPES[imageFile.type];
       const path = `${currentUserId}/${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("comment-images").upload(path, imageFile);
+      // Random, never-reused filename — safe to cache for a long time, which
+      // meaningfully cuts Supabase's cached-egress bill on repeat views.
+      const { error: uploadError } = await supabase.storage
+        .from("comment-images")
+        .upload(path, imageFile, { cacheControl: "31536000" });
       if (uploadError) {
         setCommentError(uploadError.message);
         setSubmitting(false);
