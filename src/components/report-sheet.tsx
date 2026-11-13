@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Flag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const REASONS = ["Inappropriate text", "Inappropriate image", "Offensive content", "Spam", "Other"];
+const REASONS = ["Inappropriate text", "Inappropriate image", "Inappropriate audio", "Offensive content", "Spam", "Other"];
 
 interface ReportSheetProps {
   open: boolean;

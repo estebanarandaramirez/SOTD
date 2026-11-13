@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Pencil, Check, X, Trash2, MoreVertical, ImagePlus } from "lucide-react";
+import { Send, Pencil, Check, X, Trash2, MoreVertical, ImagePlus, Mic, Square } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ReportSheet } from "./report-sheet";
 import { ImageViewer } from "./image-viewer";
+import { AudioPlayer } from "./audio-player";
+import { useVoiceRecorder } from "@/lib/use-voice-recorder";
 import { timeAgo, splitMentions } from "@/lib/utils";
 import { containsProfanity } from "@/lib/moderation";
 import { notifyMentions, searchUsersForMention } from "@/app/(app)/actions";
@@ -16,6 +18,8 @@ interface Comment {
   user_id: string;
   body: string;
   image_url: string | null;
+  audio_url: string | null;
+  audio_duration: number | null;
   created_at: string;
   profiles: { username: string; avatar_url: string | null };
 }
@@ -26,6 +30,12 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
 };
+
+function extFromAudioMime(mime: string) {
+  if (mime.includes("mp4")) return "m4a";
+  if (mime.includes("webm")) return "webm";
+  return "audio";
+}
 
 interface CommentListProps {
   postId: string;
@@ -70,6 +80,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   const inputRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const voiceNote = useVoiceRecorder();
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -86,7 +97,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
     const supabase = createClient();
     supabase
       .from("comments")
-      .select("id, user_id, body, image_url, created_at, profiles(username, avatar_url)")
+      .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles(username, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
       .then(({ data }) => {
@@ -127,7 +138,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if ((!body.trim() && !imageFile) || !currentUserId) return;
+    if ((!body.trim() && !imageFile && !voiceNote.audioBlob) || !currentUserId) return;
     if (body.trim() && containsProfanity(body.trim())) {
       setCommentError("Your comment contains inappropriate language.");
       return;
@@ -154,10 +165,32 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
       imageUrl = supabase.storage.from("comment-images").getPublicUrl(path).data.publicUrl;
     }
 
+    let audioUrl: string | null = null;
+    if (voiceNote.audioBlob) {
+      const ext = extFromAudioMime(voiceNote.audioBlob.type);
+      const path = `${currentUserId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("comment-audio")
+        .upload(path, voiceNote.audioBlob, { cacheControl: "31536000", contentType: voiceNote.audioBlob.type });
+      if (uploadError) {
+        setCommentError(uploadError.message);
+        setSubmitting(false);
+        return;
+      }
+      audioUrl = supabase.storage.from("comment-audio").getPublicUrl(path).data.publicUrl;
+    }
+
     const { data } = await supabase
       .from("comments")
-      .insert({ post_id: postId, user_id: currentUserId, body: body.trim(), image_url: imageUrl })
-      .select("id, user_id, body, image_url, created_at, profiles(username, avatar_url)")
+      .insert({
+        post_id: postId,
+        user_id: currentUserId,
+        body: body.trim(),
+        image_url: imageUrl,
+        audio_url: audioUrl,
+        audio_duration: audioUrl ? voiceNote.elapsed : null,
+      })
+      .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles(username, avatar_url)")
       .single();
 
     if (data) {
@@ -169,13 +202,14 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
     setBody("");
     setImageFile(null);
     setImagePreview(null);
+    voiceNote.reset();
     setMentionQuery(null);
     setSubmitting(false);
   }
 
   async function saveEdit(commentId: string) {
-    const hasImage = comments.find((c) => c.id === commentId)?.image_url;
-    if (!editBody.trim() && !hasImage) return;
+    const existing = comments.find((c) => c.id === commentId);
+    if (!editBody.trim() && !existing?.image_url && !existing?.audio_url) return;
     const supabase = createClient();
     const { error } = await supabase
       .from("comments")
@@ -267,6 +301,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                     className="block w-16 h-16 rounded-lg overflow-hidden border border-border"
                   />
                 )}
+                {c.audio_url && <AudioPlayer src={c.audio_url} duration={c.audio_duration} />}
                 <p className="text-xs text-muted-foreground text-right">{editBody.length}/300</p>
               </div>
             ) : (
@@ -277,6 +312,11 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                     src={c.image_url}
                     className="block mt-1.5 max-w-[160px] max-h-[160px] rounded-lg overflow-hidden border border-border"
                   />
+                )}
+                {c.audio_url && (
+                  <div className="mt-1.5">
+                    <AudioPlayer src={c.audio_url} duration={c.audio_duration} />
+                  </div>
                 )}
               </>
             )}
@@ -316,11 +356,39 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                 </button>
               </div>
             )}
+            {voiceNote.recording && (
+              <button
+                type="button"
+                onClick={voiceNote.stop}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary text-xs font-medium"
+              >
+                <Square className="w-3 h-3 text-red-500 fill-red-500" />
+                Recording… {voiceNote.elapsed}s / {voiceNote.maxSeconds}s
+              </button>
+            )}
+            {voiceNote.audioUrl && (
+              <div className="flex items-center gap-2">
+                <AudioPlayer src={voiceNote.audioUrl} duration={voiceNote.elapsed} />
+                <button type="button" onClick={voiceNote.reset} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
-              <label className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer flex-shrink-0">
+              <label className={`p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer flex-shrink-0 ${voiceNote.recording || voiceNote.audioUrl ? "opacity-30 pointer-events-none" : ""}`}>
                 <ImagePlus className="w-4 h-4" />
                 <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
               </label>
+              {!voiceNote.recording && !voiceNote.audioUrl && (
+                <button
+                  type="button"
+                  onClick={voiceNote.start}
+                  disabled={!!imageFile}
+                  className={`p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0 ${imageFile ? "opacity-30" : ""}`}
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              )}
               <input
                 ref={inputRef}
                 type="text"
@@ -331,12 +399,13 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
               />
               <button
                 type="submit"
-                disabled={(!body.trim() && !imageFile) || submitting}
+                disabled={(!body.trim() && !imageFile && !voiceNote.audioBlob) || submitting || voiceNote.recording}
                 className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-opacity"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
+            {voiceNote.error && <p className="text-xs text-destructive">{voiceNote.error}</p>}
             {body.length > 0 && (
               <p className="text-xs text-muted-foreground text-right">{body.length}/300</p>
             )}

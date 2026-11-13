@@ -244,6 +244,8 @@ export interface FeedPost {
   comment_count: number;
   liked_by_me: boolean;
   image_url: string | null;
+  audio_url: string | null;
+  audio_duration: number | null;
 }
 
 export interface SimilarUser {

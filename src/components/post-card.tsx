@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MessageCircle, Music, Play, Pencil, Check, X, MoreVertical, Images } from "lucide-react";
+import { Heart, MessageCircle, Music, Play, Pencil, Check, X, MoreVertical, Images, Mic } from "lucide-react";
 import { PostMenu } from "./post-menu";
 import { cn, timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +12,7 @@ import { containsProfanity } from "@/lib/moderation";
 import type { FeedPost } from "@/types/database";
 import { CommentSheet } from "./comment-sheet";
 import { CommentList } from "./comment-list";
+import { AudioPlayer } from "./audio-player";
 
 const SpotifyIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className}>
@@ -115,6 +116,11 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
                   ))}
                 </div>
               </>
+            )}
+            {post.audio_url && (
+              <div className="absolute top-1 left-1 z-10 text-white drop-shadow pointer-events-none">
+                <Mic className="w-2.5 h-2.5" />
+              </div>
             )}
           </div>
 
@@ -424,6 +430,8 @@ export function PostCard({ post, currentUserId, variant = "banner" }: PostCardPr
               </p>
             )
           )}
+
+          {post.audio_url && <AudioPlayer src={post.audio_url} duration={post.audio_duration} />}
 
           {/* Actions */}
           <div className="flex items-center gap-4 pt-1">

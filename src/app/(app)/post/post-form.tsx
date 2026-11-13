@@ -3,14 +3,22 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Music, X, ImagePlus } from "lucide-react";
+import { Music, X, ImagePlus, Mic, Square } from "lucide-react";
 import { SpotifySearch } from "@/components/spotify-search";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMentions } from "@/app/(app)/actions";
 import { containsProfanity } from "@/lib/moderation";
 import { GENRES } from "@/lib/genres";
 import { cn } from "@/lib/utils";
+import { useVoiceRecorder } from "@/lib/use-voice-recorder";
+import { AudioPlayer } from "@/components/audio-player";
 import type { SpotifyTrack } from "@/lib/spotify";
+
+function extFromAudioMime(mime: string) {
+  if (mime.includes("mp4")) return "m4a";
+  if (mime.includes("webm")) return "webm";
+  return "audio";
+}
 
 const GENRE_MAP: Record<string, string[]> = {
   "Pop": ["pop", "electropop", "dance pop", "synth-pop", "synth pop"],
@@ -47,6 +55,7 @@ export function PostForm({ userId }: { userId: string }) {
   const [genreQuery, setGenreQuery] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const voiceNote = useVoiceRecorder();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -114,6 +123,21 @@ export function PostForm({ userId }: { userId: string }) {
       imageUrl = supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
     }
 
+    let audioUrl: string | null = null;
+    if (voiceNote.audioBlob) {
+      const ext = extFromAudioMime(voiceNote.audioBlob.type);
+      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("post-audio")
+        .upload(path, voiceNote.audioBlob, { cacheControl: "31536000", contentType: voiceNote.audioBlob.type });
+      if (uploadError) {
+        setError(uploadError.message);
+        setSubmitting(false);
+        return;
+      }
+      audioUrl = supabase.storage.from("post-audio").getPublicUrl(path).data.publicUrl;
+    }
+
     const { data: newPost, error } = await supabase.from("posts").insert({
       user_id: userId,
       spotify_track_id: selectedTrack.id,
@@ -126,6 +150,8 @@ export function PostForm({ userId }: { userId: string }) {
       note: note.trim() || null,
       genre: genre,
       image_url: imageUrl,
+      audio_url: audioUrl,
+      audio_duration: audioUrl ? voiceNote.elapsed : null,
       posted_date,
     }).select("id").single();
 
@@ -266,10 +292,10 @@ export function PostForm({ userId }: { userId: string }) {
             <p className="text-xs text-right mt-1 text-muted-foreground">{note.length}/500</p>
           </div>
 
-          {/* Photo (optional) */}
+          {/* Photo or voice note (optional, pick one) */}
           <div>
             <label className="text-sm font-medium block mb-1.5">
-              Add a photo <span className="text-muted-foreground font-normal">(optional)</span>
+              Add a photo or voice note <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             {imagePreview ? (
               <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-border">
@@ -283,13 +309,40 @@ export function PostForm({ userId }: { userId: string }) {
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
+            ) : voiceNote.recording ? (
+              <button
+                type="button"
+                onClick={voiceNote.stop}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-primary text-sm font-medium"
+              >
+                <Square className="w-3.5 h-3.5 text-red-500 fill-red-500" />
+                Recording… {voiceNote.elapsed}s / {voiceNote.maxSeconds}s
+              </button>
+            ) : voiceNote.audioUrl ? (
+              <div className="flex items-center gap-2">
+                <AudioPlayer src={voiceNote.audioUrl} duration={voiceNote.elapsed} />
+                <button type="button" onClick={voiceNote.reset} className="p-1.5 rounded-full hover:bg-muted text-muted-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             ) : (
-              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-input text-sm font-medium hover:bg-muted transition-colors cursor-pointer">
-                <ImagePlus className="w-4 h-4" />
-                Add photo
-                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-input text-sm font-medium hover:bg-muted transition-colors cursor-pointer">
+                  <ImagePlus className="w-4 h-4" />
+                  Add photo
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                </label>
+                <button
+                  type="button"
+                  onClick={voiceNote.start}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-input text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  <Mic className="w-4 h-4" />
+                  Record
+                </button>
+              </div>
             )}
+            {voiceNote.error && <p className="text-xs text-destructive mt-1.5">{voiceNote.error}</p>}
           </div>
 
           {error && (
@@ -298,7 +351,7 @@ export function PostForm({ userId }: { userId: string }) {
 
           <button
             onClick={handlePost}
-            disabled={submitting}
+            disabled={submitting || voiceNote.recording}
             className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {submitting ? "Posting…" : "Post song"}

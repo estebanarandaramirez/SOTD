@@ -61,6 +61,8 @@ export default async function PostDetailPage({ params }: { params: { id: string 
     comment_count: commentCount ?? 0,
     liked_by_me: !!myLike,
     image_url: raw.image_url ?? null,
+    audio_url: raw.audio_url ?? null,
+    audio_duration: raw.audio_duration ?? null,
   };
 
   return (
