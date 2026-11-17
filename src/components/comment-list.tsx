@@ -285,7 +285,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                 {c.profiles.username}
               </Link>
               <span className="text-xs text-muted-foreground">{timeAgo(c.created_at)}</span>
-              <div className="ml-auto flex items-center gap-3">
+              <div className="ml-auto flex items-center gap-2">
                 <button
                   onClick={() => toggleCommentLike(c.id)}
                   disabled={!currentUserId || currentUserId === c.user_id}
