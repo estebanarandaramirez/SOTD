@@ -285,7 +285,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                 {c.profiles.username}
               </Link>
               <span className="text-xs text-muted-foreground">{timeAgo(c.created_at)}</span>
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-[7px]">
                 {currentUserId === c.user_id ? (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Heart className="w-3 h-3" />
@@ -302,7 +302,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                   </button>
                 )}
                 {currentUserId === c.user_id && editingId !== c.id && (
-                  <div className="flex items-center gap-1.5">
+                  <>
                     <button
                       onClick={() => { setEditingId(c.id); setEditBody(c.body); }}
                       className="text-muted-foreground hover:text-foreground transition-colors"
@@ -316,7 +316,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </div>
+                  </>
                 )}
                 {currentUserId && currentUserId !== c.user_id && (
                   <button
