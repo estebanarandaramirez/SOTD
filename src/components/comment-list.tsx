@@ -293,7 +293,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                     className={`flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
-                    <span className="inline-block w-3 text-left tabular-nums">{commentLikes[c.id]?.count || ""}</span>
+                    {!!commentLikes[c.id]?.count && <span className="tabular-nums">{commentLikes[c.id].count}</span>}
                   </button>
                 )}
                 {currentUserId === c.user_id && editingId !== c.id && (
