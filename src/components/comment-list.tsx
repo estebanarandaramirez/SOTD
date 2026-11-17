@@ -286,14 +286,21 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
               </Link>
               <span className="text-xs text-muted-foreground">{timeAgo(c.created_at)}</span>
               <div className="ml-auto flex items-center gap-2">
-                <button
-                  onClick={() => toggleCommentLike(c.id)}
-                  disabled={!currentUserId || currentUserId === c.user_id}
-                  className={`flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground disabled:hover:text-muted-foreground"}`}
-                >
-                  <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
-                  <span className="inline-block w-3 text-left tabular-nums">{commentLikes[c.id]?.count || ""}</span>
-                </button>
+                {currentUserId === c.user_id ? (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Heart className="w-3 h-3" />
+                    <span className="inline-block w-3 text-left tabular-nums">{commentLikes[c.id]?.count || ""}</span>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => toggleCommentLike(c.id)}
+                    disabled={!currentUserId}
+                    className={`flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
+                    <span className="inline-block w-3 text-left tabular-nums">{commentLikes[c.id]?.count || ""}</span>
+                  </button>
+                )}
                 {currentUserId === c.user_id && editingId !== c.id && (
                   <div className="flex items-center gap-1.5">
                     <button
