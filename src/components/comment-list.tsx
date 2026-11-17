@@ -285,31 +285,41 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                 {c.profiles.username}
               </Link>
               <span className="text-xs text-muted-foreground">{timeAgo(c.created_at)}</span>
-              {currentUserId === c.user_id && editingId !== c.id && (
-                <div className="ml-auto flex items-center gap-1.5">
+              <div className="ml-auto flex items-center gap-3">
+                <button
+                  onClick={() => toggleCommentLike(c.id)}
+                  disabled={!currentUserId || currentUserId === c.user_id}
+                  className={`flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground disabled:hover:text-muted-foreground"}`}
+                >
+                  <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
+                  <span className="inline-block w-3 text-left tabular-nums">{commentLikes[c.id]?.count || ""}</span>
+                </button>
+                {currentUserId === c.user_id && editingId !== c.id && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => { setEditingId(c.id); setEditBody(c.body); }}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => deleteComment(c.id)}
+                      disabled={deletingId === c.id}
+                      className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                {currentUserId && currentUserId !== c.user_id && (
                   <button
-                    onClick={() => { setEditingId(c.id); setEditBody(c.body); }}
+                    onClick={() => setReportMenuFor(c.id)}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <Pencil className="w-3 h-3" />
+                    <MoreVertical className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    onClick={() => deleteComment(c.id)}
-                    disabled={deletingId === c.id}
-                    className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-              {currentUserId && currentUserId !== c.user_id && (
-                <button
-                  onClick={() => setReportMenuFor(c.id)}
-                  className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MoreVertical className="w-3.5 h-3.5" />
-                </button>
-              )}
+                )}
+              </div>
             </div>
             {editingId === c.id ? (
               <div className="mt-1 space-y-1.5">
@@ -348,14 +358,6 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                     <AudioPlayer src={c.audio_url} duration={c.audio_duration} />
                   </div>
                 )}
-                <button
-                  onClick={() => toggleCommentLike(c.id)}
-                  disabled={!currentUserId}
-                  className={`mt-1 flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
-                  {!!commentLikes[c.id]?.count && <span>{commentLikes[c.id].count}</span>}
-                </button>
               </>
             )}
           </div>
