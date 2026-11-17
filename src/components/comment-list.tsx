@@ -286,16 +286,14 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
               </Link>
               <span className="text-xs text-muted-foreground">{timeAgo(c.created_at)}</span>
               <div className="ml-auto flex items-center gap-[7px]">
-                {currentUserId !== c.user_id && (
-                  <button
-                    onClick={() => toggleCommentLike(c.id)}
-                    disabled={!currentUserId}
-                    className={`flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
-                    {!!commentLikes[c.id]?.count && <span className="tabular-nums">{commentLikes[c.id].count}</span>}
-                  </button>
-                )}
+                <button
+                  onClick={() => toggleCommentLike(c.id)}
+                  disabled={!currentUserId}
+                  className={`flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
+                  {!!commentLikes[c.id]?.count && <span className="tabular-nums">{commentLikes[c.id].count}</span>}
+                </button>
                 {currentUserId === c.user_id && editingId !== c.id && (
                   <>
                     <button
