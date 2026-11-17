@@ -142,6 +142,7 @@ export interface Database {
           actor_id: string | null;
           type: string;
           post_id: string | null;
+          comment_id: string | null;
           read: boolean;
           created_at: string;
         };
@@ -151,12 +152,26 @@ export interface Database {
           actor_id?: string | null;
           type: string;
           post_id?: string | null;
+          comment_id?: string | null;
           read?: boolean;
           created_at?: string;
         };
         Update: {
           read?: boolean;
         };
+      };
+      comment_likes: {
+        Row: {
+          comment_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          comment_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: never;
       };
       blocks: {
         Row: {

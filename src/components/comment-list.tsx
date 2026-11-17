@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Pencil, Check, X, Trash2, MoreVertical, ImagePlus, Mic, Square } from "lucide-react";
+import { Send, Pencil, Check, X, Trash2, MoreVertical, ImagePlus, Mic, Square, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -72,6 +72,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   const [editBody, setEditBody] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reportMenuFor, setReportMenuFor] = useState<string | null>(null);
+  const [commentLikes, setCommentLikes] = useState<Record<string, { count: number; liked: boolean }>>({});
 
   // Mention autocomplete
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -100,11 +101,40 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
       .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles(username, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        setComments((data as unknown as Comment[]) ?? []);
+      .then(async ({ data }) => {
+        const list = (data as unknown as Comment[]) ?? [];
+        setComments(list);
         setLoading(false);
+
+        if (list.length) {
+          const { data: likeRows } = await supabase
+            .from("comment_likes")
+            .select("comment_id, user_id")
+            .in("comment_id", list.map((c) => c.id));
+          const next: Record<string, { count: number; liked: boolean }> = {};
+          for (const row of likeRows ?? []) {
+            const entry = next[row.comment_id] ?? { count: 0, liked: false };
+            entry.count += 1;
+            if (row.user_id === currentUserId) entry.liked = true;
+            next[row.comment_id] = entry;
+          }
+          setCommentLikes(next);
+        }
       });
-  }, [postId]);
+  }, [postId, currentUserId]);
+
+  async function toggleCommentLike(commentId: string) {
+    if (!currentUserId) return;
+    const supabase = createClient();
+    const current = commentLikes[commentId] ?? { count: 0, liked: false };
+    if (current.liked) {
+      setCommentLikes((prev) => ({ ...prev, [commentId]: { count: current.count - 1, liked: false } }));
+      await supabase.from("comment_likes").delete().match({ comment_id: commentId, user_id: currentUserId });
+    } else {
+      setCommentLikes((prev) => ({ ...prev, [commentId]: { count: current.count + 1, liked: true } }));
+      await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: currentUserId });
+    }
+  }
 
   // Mention autocomplete lookup
   useEffect(() => {
@@ -197,7 +227,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
       setComments((prev) => [...prev, data as unknown as Comment]);
       onCommentAdded?.();
       // Notify mentioned users
-      if (body.trim()) await notifyMentions(body.trim(), postId, currentUserId);
+      if (body.trim()) await notifyMentions(body.trim(), postId, currentUserId, "mention_comment");
     }
     setBody("");
     setImageFile(null);
@@ -318,6 +348,14 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
                     <AudioPlayer src={c.audio_url} duration={c.audio_duration} />
                   </div>
                 )}
+                <button
+                  onClick={() => toggleCommentLike(c.id)}
+                  disabled={!currentUserId}
+                  className={`mt-1 flex items-center gap-1 text-xs transition-colors ${commentLikes[c.id]?.liked ? "text-red-500" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Heart className={`w-3 h-3 ${commentLikes[c.id]?.liked ? "fill-current" : ""}`} />
+                  {!!commentLikes[c.id]?.count && <span>{commentLikes[c.id].count}</span>}
+                </button>
               </>
             )}
           </div>

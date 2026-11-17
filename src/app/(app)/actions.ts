@@ -3,7 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { parseMentions } from "@/lib/utils";
 
-export async function notifyMentions(body: string, postId: string, actorId: string) {
+export async function notifyMentions(
+  body: string,
+  postId: string,
+  actorId: string,
+  type: "mention_post" | "mention_comment"
+) {
   const usernames = parseMentions(body);
   if (!usernames.length) return;
 
@@ -22,7 +27,7 @@ export async function notifyMentions(body: string, postId: string, actorId: stri
     targets.map((u) => ({
       user_id: u.id,
       actor_id: actorId,
-      type: "mention",
+      type,
       post_id: postId,
     }))
   );

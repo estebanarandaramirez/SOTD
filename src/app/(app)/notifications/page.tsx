@@ -11,12 +11,13 @@ type RawNotification = Record<string, any>;
 
 function notificationText(n: RawNotification): { action: string } {
   switch (n.type) {
-    case "like":    return { action: "liked your post" };
-    case "comment": return { action: "commented on your post" };
-    case "follow":  return { action: "started following you" };
+    case "like":         return { action: "liked your post" };
+    case "comment_like": return { action: "liked your comment" };
+    case "comment":      return { action: "commented on your post" };
+    case "follow":       return { action: "started following you" };
     case "mention":         return { action: "mentioned you in a comment on" };
     case "mention_comment": return { action: "mentioned you in a comment on" };
-    case "mention_post":    return { action: "mentioned you in a post" };
+    case "mention_post":    return { action: "mentioned you in their post" };
     default:        return { action: "" };
   }
 }

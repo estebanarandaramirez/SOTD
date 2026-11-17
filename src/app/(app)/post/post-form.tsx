@@ -164,7 +164,7 @@ export function PostForm({ userId }: { userId: string }) {
     } else {
       // Notify anyone @mentioned in the note
       if (newPost && note.trim()) {
-        await notifyMentions(note.trim(), newPost.id, userId);
+        await notifyMentions(note.trim(), newPost.id, userId, "mention_post");
       }
       router.push("/feed");
       router.refresh();
