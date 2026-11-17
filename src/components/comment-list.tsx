@@ -98,7 +98,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
     const supabase = createClient();
     supabase
       .from("comments")
-      .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles(username, avatar_url)")
+      .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles!comments_user_id_fkey(username, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
       .then(async ({ data }) => {
@@ -220,7 +220,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
         audio_url: audioUrl,
         audio_duration: audioUrl ? voiceNote.elapsed : null,
       })
-      .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles(username, avatar_url)")
+      .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles!comments_user_id_fkey(username, avatar_url)")
       .single();
 
     if (data) {
