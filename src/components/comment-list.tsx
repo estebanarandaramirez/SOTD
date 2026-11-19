@@ -64,6 +64,8 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   const [comments, setComments] = useState<Comment[]>([]);
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState("");
 
@@ -95,13 +97,19 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
 
   useEffect(() => {
     setLoading(true);
+    setLoadError(false);
     const supabase = createClient();
     supabase
       .from("comments")
       .select("id, user_id, body, image_url, audio_url, audio_duration, created_at, profiles!comments_user_id_fkey(username, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
-      .then(async ({ data }) => {
+      .then(async ({ data, error }) => {
+        if (error) {
+          setLoadError(true);
+          setLoading(false);
+          return;
+        }
         const list = (data as unknown as Comment[]) ?? [];
         setComments(list);
         setLoading(false);
@@ -121,7 +129,7 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
           setCommentLikes(next);
         }
       });
-  }, [postId, currentUserId]);
+  }, [postId, currentUserId, retryCount]);
 
   async function toggleCommentLike(commentId: string) {
     if (!currentUserId) return;
@@ -265,7 +273,15 @@ export function CommentList({ postId, currentUserId, onCommentAdded }: CommentLi
   return (
     <div className="space-y-3">
       {loading && <p className="text-sm text-muted-foreground text-center py-2">Loading…</p>}
-      {!loading && comments.length === 0 && (
+      {!loading && loadError && (
+        <div className="text-center py-2">
+          <p className="text-sm text-destructive">Couldn&apos;t load comments.</p>
+          <button onClick={() => setRetryCount((n) => n + 1)} className="text-sm text-primary font-medium mt-0.5 hover:underline">
+            Tap to retry
+          </button>
+        </div>
+      )}
+      {!loading && !loadError && comments.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-2">No comments yet. Be first!</p>
       )}
       {comments.map((c) => (
